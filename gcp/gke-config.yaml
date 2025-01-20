@@ -1,0 +1,24 @@
+# This Resource Definition of type "config" uses the Template Driver to provide configuration values
+# to other Resource Definitions for accessing the GKE cluster
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: gcs-gke-config
+entity:
+  name: gcs-gke-config
+  type: config
+  driver_type: humanitec/template
+  # The identity configured in the Cloud Account returned here needs permission to deploy Workloads
+  # to your GKE cluster
+  driver_account: htc-docs-tutorials-demo-temp
+  driver_inputs:
+    values:
+      templates:
+        outputs: |
+          gke_project_id: htc-docs-tutorials
+          gke_project_number: 336485447137
+  criteria:
+    - class: default
+      res_id: gke-config
+      env_type: development
+      app_id: workload-identity-test

@@ -1,2 +1,3 @@
-# k8s-workload-identity
-Backing repository for the Humanitec learning guide on how to use Kubernetes workload identity
+## Kubernetes workload identity
+
+The material in this project provides the example tooling showing how to use Kubernetes Workload identity with the Humanitec Platform Orchestrator.

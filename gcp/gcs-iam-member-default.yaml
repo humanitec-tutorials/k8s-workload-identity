@@ -1,0 +1,25 @@
+# This Resource Definition uses the Template Driver to create a portion of an IAM policy for gcs
+# exempting the "member" part which is provided in the referencing Resource Definition
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: gcs-iam-member-default
+entity:
+  driver_type: humanitec/template
+  name: gcs-iam-member-default
+  type: gcp-iam-policy-binding
+  driver_inputs:
+    values:
+      gcs_bucket_name: ${resources.gcp-iam-policy-binding>gcs.outputs.name}
+      templates:
+        outputs: |
+          binding: |
+            {{ dict
+              "type" "gcs"
+              "bucket_name" (index .driver.values.gcs_bucket_name 0)
+              "role" "roles/storage.objectAdmin"
+            | toJson }}
+  # Adjust matching criteria as required
+  criteria:
+    - class: gcs-default
+      app_id: workload-identity-test

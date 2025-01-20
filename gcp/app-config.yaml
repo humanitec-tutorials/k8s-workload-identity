@@ -1,0 +1,24 @@
+# This Resource Definition of type "config" uses the Template Driver to provide configuration values
+# to other Resource Definitions for accessing the Google Cloud Project
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: gcs-app-config
+entity:
+  name: gcs-app-config
+  type: config
+  driver_type: humanitec/template
+  # The identity used in this Cloud Account needs permissions to create policy bindings
+  # in your Google Cloud project
+  driver_account: htc-docs-tutorials-demo-temp
+  driver_inputs:
+    values:
+      templates:
+        outputs: |
+          project_id: htc-docs-tutorials
+          region: europe-west3
+  criteria:
+    - class: default
+      res_id: app-config
+      env_type: development
+      app_id: workload-identity-test
