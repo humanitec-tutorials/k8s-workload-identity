@@ -21,66 +21,72 @@ entity:
       credentials_config:
         variables:
           access_token: access_token
-      script: |-
-        terraform {
-          required_providers {
-            google = {
-              source  = "hashicorp/google"
-            }
-            random = {
-              source  = "hashicorp/random"
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+              random = {
+                source  = "hashicorp/random"
+              }
             }
           }
-        }
-        provider "google" {
-          access_token = var.access_token
+        variables.tf: |
+          locals {
+            workload_id = split(".", var.res_id)[1]
+          }
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "app_id" {
+            type = string
+          }
+          variable "env_id" {
+            type = string
+          }
+          variable "res_id" {
+            type = string
+          }
+          variable "project_id" {
+            type = string
+          }
+          variable "region" {
+            type = string
+          }
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+            
+            default_labels = {
+              "humanitec"  = "true"
+              "hum-app"    = var.app_id
+              "hum-env"    = var.env_id
+              "hum-res"    = replace(var.res_id, ".", "-")
+              "managed-by" = "terraform"
+            }
+          }
+
+          resource "random_string" "bucket_name" {
+            length  = 10
+            special = false
+            lower   = true
+            upper   = false
+          }
           
-          default_labels = {
-            "humanitec"  = "true"
-            "hum-app"    = var.app_id
-            "hum-env"    = var.env_id
-            "hum-res"    = replace(var.res_id, ".", "-")
-            "managed-by" = "terraform"
+          resource "google_storage_bucket" "bucket" {
+            project                     = var.project_id
+            name                        = random_string.bucket_name.result
+            location                    = var.region
+            uniform_bucket_level_access = true
+            force_destroy               = true
           }
-        }
-        locals {
-          workload_id = split(".", var.res_id)[1]
-        }
-        variable "access_token" {
-          type      = string
-          sensitive = true
-        }
-        variable "app_id" {
-          type = string
-        }
-        variable "env_id" {
-          type = string
-        }
-        variable "res_id" {
-          type = string
-        }
-        variable "project_id" {
-          type = string
-        }
-        variable "region" {
-          type = string
-        }
-        resource "random_string" "bucket_name" {
-          length  = 10
-          special = false
-          lower   = true
-          upper   = false
-        }
-        resource "google_storage_bucket" "bucket" {
-          project                     = var.project_id
-          name                        = random_string.bucket_name.result
-          location                    = var.region
-          uniform_bucket_level_access = true
-          force_destroy               = true
-        }
-        output "name" {
-          value = google_storage_bucket.bucket.name
-        }
+        outputs.tf: |
+          output "name" {
+            value = google_storage_bucket.bucket.name
+          }
   provision:
     "gcp-iam-policy-binding.gcs-default":
       is_dependent: true
