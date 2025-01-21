@@ -75,7 +75,7 @@ entity:
             lower   = true
             upper   = false
           }
-          
+
           resource "google_storage_bucket" "bucket" {
             project                     = var.project_id
             name                        = random_string.bucket_name.result
@@ -88,9 +88,8 @@ entity:
             value = google_storage_bucket.bucket.name
           }
   provision:
-    "gcp-iam-policy-binding.gcs-default":
+    gcp-iam-policy-binding:
       is_dependent: true
-      match_dependents: true
   # Adjust matching criteria as required
   criteria:
     - class: default

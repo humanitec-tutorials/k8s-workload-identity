@@ -1,17 +1,18 @@
 apiVersion: score.dev/v1b1
 
 metadata:
-  name: hello-gcs
+  name: hello-gcs-2
 
 containers:
   hello-world:
     image: .
     # Specifies environment variable
     variables:
-      GCP_BUCKET_NAME: ${resources.bucket.name}
+      GCP_BUCKET_1_NAME: ${resources.bucket-1.name}
+      GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
 
 resources:
-  bucket:
+  bucket-1:
     type: gcs
   bucket-2:
     type: gcs

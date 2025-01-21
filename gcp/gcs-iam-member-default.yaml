@@ -5,21 +5,75 @@ kind: Definition
 metadata:
   id: gcs-iam-member-default
 entity:
-  driver_type: humanitec/template
+  driver_type: humanitec/terraform
   name: gcs-iam-member-default
   type: gcp-iam-policy-binding
+  # Obtain the Cloud Account from a config resource
+  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      gcs_bucket_name: ${resources.gcp-iam-policy-binding>gcs.outputs.name}
-      templates:
-        outputs: |
-          binding: |
-            {{ dict
-              "type" "gcs"
-              "bucket_name" (index .driver.values.gcs_bucket_name 0)
-              "role" "roles/storage.objectAdmin"
-            | toJson }}
+      variables:
+        app_id: ${context.app.id}
+        env_id: ${context.env.id}
+        res_id: ${context.res.id}
+        gcs_bucket_name: ${resources.gcs.outputs.name}
+        # This resource selector traverses the Graph via gcs and workload to read the principal output from the k8s-service-account.
+        # Note: the shorter selector version ${resources['workload>k8s-service-account'].outputs.principal} will not work
+        # because the first part of selector works like a normal Resource Descriptor.
+        # It replaces missing values - here, the resource ID - with the current context, i.e. the ID of the current resource.
+        # Since the k8s-service-account has a different ID than workload and service-account, we need to traverse via the gcs
+        # which has the same ID as the current resource.
+        principal: ${resources['gcs<workload>k8s-service-account'].outputs.principal}
+      credentials_config:
+        variables:
+          access_token: access_token
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+            }
+          }
+        variables.tf: |
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "gcs_bucket_name" {}
+
+          # This variable is a list because a resource selector, which is used
+          # to retrieve the value, always returns an array
+          variable "principal" {
+            type    = list(string)
+          }
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+            
+            default_labels = {
+              "humanitec"  = "true"
+              "hum-app"    = var.app_id
+              "hum-env"    = var.env_id
+              "hum-res"    = replace(var.res_id, ".", "-")
+              "managed-by" = "terraform"
+            }
+          }
+
+          resource "google_storage_bucket_iam_member" "iam_member" {
+            bucket  = var.gcs_bucket_name
+            role    = "roles/storage.objectAdmin"
+            member  = var.principal[0]
+          }
+
+        outputs.tf: |
+          output "principal" {
+            value = var.principal[0]
+          }   
   # Adjust matching criteria as required
   criteria:
-    - class: gcs-default
-      app_id: workload-identity-test
+    - app_id: workload-identity-test
