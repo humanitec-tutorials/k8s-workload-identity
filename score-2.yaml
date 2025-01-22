@@ -6,7 +6,6 @@ metadata:
 containers:
   hello-world:
     image: .
-    # Specifies environment variable
     variables:
       GCP_BUCKET_1_NAME: ${resources.bucket-1.name}
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
