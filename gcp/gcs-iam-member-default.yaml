@@ -16,10 +16,10 @@ entity:
         app_id: ${context.app.id}
         env_id: ${context.env.id}
         res_id: ${context.res.id}
-        # Obtain the bucket name from the bucket resource this resource depends on
-        # In this Resource selector, the first part "gcp-iam-policy-binding" will have the same resource ID
-        # as the present resource, making it the same.
-        gcs_bucket_name: ${resources['gcp-iam-policy-binding>gcs'].outputs.name}
+        # Obtain the bucket name from the bucket resource this resource depends on.
+        # This Resource reference will map to a `gcs` resource with the same ID as the present resource,
+        # effectively matching the one which co-provisioned it.
+        gcs_bucket_name: ${resources.gcs.outputs.name}
         # This resource selector traverses the Graph via gcs and workload to read the principal output from the k8s-service-account.
         # Note: the shorter selector version ${resources['workload>k8s-service-account'].outputs.principal} will not work
         # because the first part of selector works like a normal Resource Descriptor.
@@ -47,12 +47,10 @@ entity:
           variable "app_id" {}
           variable "env_id" {}
           variable "res_id" {}
+          variable "gcs_bucket_name" {}
 
-          # These variables are lists because a resource selector, which is used
-          # to retrieve the values, always returns an array
-          variable "gcs_bucket_name" {
-            type = list(string)
-          }
+          # This variable is a list because a resource selector, which is used
+          # to retrieve it, always returns an array
           variable "principal" {
             type = list(string)
           }
@@ -70,7 +68,7 @@ entity:
           }
 
           resource "google_storage_bucket_iam_member" "iam_member" {
-            bucket  = var.gcs_bucket_name[0]
+            bucket  = var.gcs_bucket_name
             role    = "roles/storage.objectAdmin"
             member  = var.principal[0]
           }
