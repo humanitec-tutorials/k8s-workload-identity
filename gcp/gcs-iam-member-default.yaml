@@ -20,7 +20,8 @@ entity:
         # This Resource reference will map to a `gcs` resource with the same ID as the present resource,
         # effectively matching the one which co-provisioned it.
         gcs_bucket_name: ${resources.gcs.outputs.name}
-        # This resource selector traverses the Graph via gcs and workload to read the principal output from the k8s-service-account.
+        # This resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
+        # that the corresponding `gcs` resource depends on. In case of e.h. a shared `gcs` bucket, this may be more than one. 
         # Note: the shorter selector version ${resources['workload>k8s-service-account'].outputs.principal} will not work
         # because the first part of selector works like a normal Resource Descriptor.
         # It replaces missing values - here, the resource ID - with the current context, i.e. the ID of the current resource.
@@ -49,10 +50,10 @@ entity:
           variable "res_id" {}
           variable "gcs_bucket_name" {}
 
-          # This variable is a list because a resource selector, which is used
+          # This variable is a set because a resource selector, which is used
           # to retrieve it, always returns an array
           variable "principal" {
-            type = list(string)
+            type = set(string)
           }
         main.tf: |
           provider "google" {
@@ -67,15 +68,18 @@ entity:
             }
           }
 
+          # Create one IAM member for each principal 
           resource "google_storage_bucket_iam_member" "iam_member" {
+            for_each = var.principal
+
             bucket  = var.gcs_bucket_name
             role    = "roles/storage.objectAdmin"
-            member  = var.principal[0]
+            member  = each.key
           }
 
         outputs.tf: |
           output "principal" {
-            value = var.principal[0]
+            value = join(",", var.principal)
           }   
   # Adjust matching criteria as required
   criteria:

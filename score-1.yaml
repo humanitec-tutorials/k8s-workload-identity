@@ -9,9 +9,13 @@ containers:
     variables:
       GCP_BUCKET_1_NAME: ${resources.bucket-1.name}
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
+      GCP_SHARED_BUCKET_NAME: ${resources.shared-bucket.name}
 
 resources:
   bucket-1:
     type: gcs
   bucket-2:
     type: gcs
+  shared-bucket:
+    type: gcs
+    id: shared-bucket
