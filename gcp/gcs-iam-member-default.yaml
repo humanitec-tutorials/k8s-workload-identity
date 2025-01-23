@@ -1,5 +1,4 @@
-# This Resource Definition uses the Template Driver to create a portion of an IAM policy for gcs
-# exempting the "member" part which is provided in the referencing Resource Definition
+# This Resource Definition uses the Terraform Driver to create IAM policy for gcs resources of the class "default"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
