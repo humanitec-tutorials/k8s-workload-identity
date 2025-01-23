@@ -19,7 +19,7 @@ entity:
         # Obtain the bucket name from the bucket resource this resource depends on.
         # This Resource reference will map to a `gcs` resource with the same ID as the present resource,
         # effectively matching the one which co-provisioned it.
-        gcs_bucket_name: ${resources.gcs.outputs.name}
+        gcs_bucket_name: ${resources['gcs.default'].outputs.name}
         # This resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
         # that the corresponding `gcs` resource depends on. In case of e.h. a shared `gcs` bucket, this may be more than one. 
         # Note: the shorter selector version ${resources['workload>k8s-service-account'].outputs.principal} will not work
@@ -27,7 +27,7 @@ entity:
         # It replaces missing values - here, the resource ID - with the current context, i.e. the ID of the current resource.
         # Since the k8s-service-account has a different ID than workload and service-account, we need to traverse via the gcs
         # which has the same ID as the current resource.
-        principal: ${resources['gcs<workload>k8s-service-account'].outputs.principal}
+        principal: ${resources['gcs.default<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
           access_token: access_token
@@ -76,11 +76,10 @@ entity:
             role    = "roles/storage.objectAdmin"
             member  = each.key
           }
-
         outputs.tf: |
           output "principal" {
             value = join(",", var.principal)
           }   
-  # Adjust matching criteria as required
+  # Match the class that is used in the "provision" statement in the gcs Resource Definition
   criteria:
-    - app_id: workload-identity-test
+    - class: gcs-default
