@@ -7,9 +7,10 @@ containers:
   hello-world:
     image: .
     variables:
-      GCP_BUCKET_1_NAME: ${resources.bucket-1.name}
-      GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
-      GCP_SHARED_BUCKET_NAME: ${resources.shared-bucket.name}
+      GCS_BUCKET_1_NAME: ${resources.bucket-1.name}
+      GCS_BUCKET_2_NAME: ${resources.bucket-2.name}
+      GCS_SHARED_BUCKET_NAME: ${resources.shared-bucket.name}
+      SPANNER_1_INSTANCE: ${resources.spanner-1.instance}
 
 resources:
   bucket-1:

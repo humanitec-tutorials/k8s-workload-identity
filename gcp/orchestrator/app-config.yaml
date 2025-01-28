@@ -1,6 +1,6 @@
 # This Resource Definition of type "config" uses the Template Driver to provide configuration values
 # to other Resource Definitions for accessing the Google Cloud Project
-# TODO - change account name and project name before publishing. Add comments to adjust
+# TODO - change account name and project name to placeholders before publishing. Add comments to adjust
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
@@ -9,7 +9,6 @@ entity:
   name: gcs-app-config
   type: config
   driver_type: humanitec/template
-  # The identity used in this Cloud Account needs permissions to create policy bindings in your Google Cloud project
   driver_account: htc-docs-tutorials-demo-temp
   driver_inputs:
     values:
