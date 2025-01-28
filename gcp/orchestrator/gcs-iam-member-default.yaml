@@ -12,9 +12,6 @@ entity:
   driver_inputs:
     values:
       variables:
-        app_id: ${context.app.id}
-        env_id: ${context.env.id}
-        res_id: ${context.res.id}
         # Obtain the bucket name from the bucket resource this resource depends on.
         # This Resource reference will map to a `gcs` resource with the same ID as the present resource,
         # effectively matching the one which co-provisioned it.
@@ -44,9 +41,6 @@ entity:
             type      = string
             sensitive = true
           }
-          variable "app_id" {}
-          variable "env_id" {}
-          variable "res_id" {}
           variable "gcs_bucket_name" {}
 
           # This variable is a set because a resource selector, which is used
@@ -57,14 +51,6 @@ entity:
         main.tf: |
           provider "google" {
             access_token = var.access_token
-            
-            default_labels = {
-              "humanitec"  = "true"
-              "hum-app"    = var.app_id
-              "hum-env"    = var.env_id
-              "hum-res"    = replace(var.res_id, ".", "-")
-              "managed-by" = "terraform"
-            }
           }
 
           # Create one IAM member for each principal 

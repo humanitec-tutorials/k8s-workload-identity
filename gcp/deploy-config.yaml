@@ -1,9 +1,9 @@
 apiVersion: config.humanitec.io/v1b1
 kind: ScoreDeployConfig
 workloads:
-  - name: hello-gcs-1
+  - name: hello-gcp-1
     specFile: ./score-1.yaml
     image: nginx
-  - name: hello-gcs-2
+  - name: hello-gcp-2
     specFile: ./score-2.yaml
     image: nginx

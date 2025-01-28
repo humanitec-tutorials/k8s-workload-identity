@@ -1,7 +1,7 @@
 apiVersion: score.dev/v1b1
 
 metadata:
-  name: hello-gcs-2
+  name: hello-gcp-2
 
 containers:
   hello-world:

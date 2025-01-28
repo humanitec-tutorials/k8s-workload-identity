@@ -1,7 +1,7 @@
 apiVersion: score.dev/v1b1
 
 metadata:
-  name: hello-gcs-1
+  name: hello-gcp-1
 
 containers:
   hello-world:
@@ -19,3 +19,5 @@ resources:
   shared-bucket:
     type: gcs
     id: shared-bucket
+  spanner-1:
+    type: spanner-instance

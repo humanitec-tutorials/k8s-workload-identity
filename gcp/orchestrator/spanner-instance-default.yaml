@@ -2,12 +2,12 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-default
+  id: spanner-instance-default
 entity:
   driver_type: humanitec/terraform
-  name: gcs-default
-  type: gcs
-  # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
+  name: spanner-instance-default
+  type: spanner-instance
+  # The identity used in this Cloud Account needs permissions to manage Spanner instances
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
@@ -41,21 +41,11 @@ entity:
             type      = string
             sensitive = true
           }
-          variable "app_id" {
-            type = string
-          }
-          variable "env_id" {
-            type = string
-          }
-          variable "res_id" {
-            type = string
-          }
-          variable "project_id" {
-            type = string
-          }
-          variable "region" {
-            type = string
-          }
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "project_id" {}
+          variable "region" {}
         main.tf: |
           provider "google" {
             access_token = var.access_token
@@ -69,26 +59,32 @@ entity:
             }
           }
 
-          resource "random_string" "bucket_name" {
-            length  = 10
+          resource "random_string" "instance_name" {
+            length  = 20
             special = false
             lower   = true
             upper   = false
           }
 
-          resource "google_storage_bucket" "bucket" {
-            project                     = var.project_id
-            name                        = random_string.bucket_name.result
-            location                    = var.region
-            uniform_bucket_level_access = true
-            force_destroy               = true
+          resource "google_spanner_instance" "instance" {
+            project                      = var.project_id
+            config                       = "regional-$\{var.region}"
+            name                         = random_string.instance_name.result
+            display_name                 = random_string.instance_name.result
+            processing_units             = 100
+            edition                      = "STANDARD"
+            default_backup_schedule_type = "AUTOMATIC"
           }
         outputs.tf: |
-          output "name" {
-            value = google_storage_bucket.bucket.name
+          output "instance" {
+            value = google_spanner_instance.instance.name
+          }
+          output "project" {
+            value = var.project_id
           }
   provision:
-    gcp-iam-policy-binding.gcs-default:
+    # Co-provision an IAM Policy resource for this class of spanner-instance
+    gcp-iam-policy-binding.spanner-instance-default:
       is_dependent: true
   # Adjust matching criteria as required
   criteria:

@@ -1,0 +1,87 @@
+# This Resource Definition of type 
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: gcs-default
+entity:
+  driver_type: humanitec/terraform
+  name: gcs-default
+  type: gcs
+  # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        project_id: ${resources['config.default#app-config'].outputs.project_id}
+        region: ${resources['config.default#app-config'].outputs.region}
+      credentials_config:
+        variables:
+          access_token: access_token
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+              random = {
+                source  = "hashicorp/random"
+              }
+            }
+          }
+        variables.tf: |
+          locals {
+            workload_id = split(".", var.res_id)[1]
+          }
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "project_id" {}
+          variable "region" {}
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+            
+            default_labels = {
+              "humanitec"  = "true"
+              "hum-app"    = var.app_id
+              "hum-env"    = var.env_id
+              "hum-res"    = replace(var.res_id, ".", "-")
+              "managed-by" = "terraform"
+            }
+          }
+
+          resource "random_string" "bucket_name" {
+            length  = 10
+            special = false
+            lower   = true
+            upper   = false
+          }
+
+          resource "google_storage_bucket" "bucket" {
+            project                     = var.project_id
+            name                        = random_string.bucket_name.result
+            location                    = var.region
+            uniform_bucket_level_access = true
+            force_destroy               = true
+          }
+        outputs.tf: |
+          output "name" {
+            value = google_storage_bucket.bucket.name
+          }
+  provision:
+    # Co-provision an IAM Policy resource for this class of gcs
+    gcp-iam-policy-binding.gcs-default:
+      is_dependent: true
+  # Adjust matching criteria as required
+  criteria:
+    - class: default
+      app_id: workload-identity-test
