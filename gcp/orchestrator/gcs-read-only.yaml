@@ -1,11 +1,11 @@
-# This Resource Definition of type `gcs` uses the Terraform Driver to provision a gcs bucket for the class "default"
+# This Resource Definition of type `gcs` uses the Terraform Driver to provision a gcs bucket for the class "read-only"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-default
+  id: gcs-read-only
 entity:
   driver_type: humanitec/terraform
-  name: gcs-default
+  name: gcs-read-only
   type: gcs
   # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
   driver_account: ${resources['config.default#app-config'].account}
@@ -79,9 +79,9 @@ entity:
           }
   provision:
     # Co-provision an IAM Policy resource for this class of gcs
-    gcp-iam-policy-binding.gcs-default:
+    gcp-iam-policy-binding.gcs-read-only:
       is_dependent: true
   # Adjust matching criteria as required
   criteria:
-    - class: default
+    - class: read-only
       app_id: workload-identity-test

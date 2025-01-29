@@ -1,23 +1,21 @@
-# This Resource Definition uses the Terraform Driver to create IAM policy for spanner-instance resources of the class "default"
-# In this scenario, each workload gets its own Spanner instance and permission to manage its own databases inside it.
+# This Resource Definition uses the Terraform Driver to create IAM policy for gcs resources of the class "read-only"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: spanner-instance-iam-member-default
+  id: gcs-iam-member-read-only
 entity:
   driver_type: humanitec/terraform
-  name: spanner-instance
+  name: gcs-iam-member-read-only
   type: gcp-iam-policy-binding
   # Obtain the Cloud Account from a config resource
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
       variables:
-        project_id: ${resources['config.default#app-config'].outputs.project_id}
-        # Obtain the spanner-instance name from the bucket resource this resource depends on.
-        spanner_instance_name: ${resources['spanner-instance.default'].outputs.instance}
-        # This resource selector traverses the Graph via spanner-instance and workload to read the principal output from all k8s-service-account resources
-        principals: ${resources['spanner-instance.default<workload>k8s-service-account'].outputs.principal}
+        # Obtain the bucket name from the bucket resource this resource depends on
+        gcs_bucket_name: ${resources['gcs.read-only'].outputs.name}
+        # This resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
+        principals: ${resources['gcs.read-only<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
           access_token: access_token
@@ -35,8 +33,7 @@ entity:
             type      = string
             sensitive = true
           }
-          variable "project_id" {}
-          variable "spanner_instance_name" {}
+          variable "gcs_bucket_name" {}
 
           # This variable is a set because a resource selector, which is used
           # to retrieve it, always returns an array
@@ -49,19 +46,18 @@ entity:
           }
 
           # Create one IAM member for each principal 
-          resource "google_spanner_instance_iam_member" "iam_member" {
+          resource "google_storage_bucket_iam_member" "iam_member" {
             for_each = var.principals
 
-            project  = var.project_id
-            instance = var.spanner_instance_name
-            role     = "roles/spanner.databaseAdmin"
-            member   = each.key
+            bucket  = var.gcs_bucket_name
+            role    = "roles/storage.objectViewer"
+            member  = each.key
           }
         outputs.tf: |
           # This output is for debugging and illustration purposes only
           output "principals" {
             value = join(",", var.principals)
           }   
-  # Match the class that is used in the "provision" statement in the spanner-instance Resource Definition
+  # Match the class that is used in the "provision" statement in the gcs Resource Definition
   criteria:
-    - class: spanner-instance-default
+    - class: gcs-read-only

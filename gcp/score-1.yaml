@@ -17,6 +17,9 @@ resources:
     type: gcs
   bucket-2:
     type: gcs
+  bucket-3:
+    type: gcs
+    class: read-only
   shared-bucket:
     type: gcs
     id: shared-bucket

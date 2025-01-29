@@ -23,7 +23,7 @@ entity:
         # It replaces missing values - here, the resource ID - with the current context, i.e. the ID of the current resource.
         # Since the k8s-service-account has a different ID than workload and service-account, we need to traverse via the gcs
         # which has the same ID as the current resource.
-        principal: ${resources['gcs.default<workload>k8s-service-account'].outputs.principal}
+        principals: ${resources['gcs.default<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
           access_token: access_token
@@ -45,7 +45,7 @@ entity:
 
           # This variable is a set because a resource selector, which is used
           # to retrieve it, always returns an array
-          variable "principal" {
+          variable "principals" {
             type = set(string)
           }
         main.tf: |
@@ -55,15 +55,16 @@ entity:
 
           # Create one IAM member for each principal 
           resource "google_storage_bucket_iam_member" "iam_member" {
-            for_each = var.principal
+            for_each = var.principals
 
             bucket  = var.gcs_bucket_name
             role    = "roles/storage.objectAdmin"
             member  = each.key
           }
         outputs.tf: |
-          output "principal" {
-            value = join(",", var.principal)
+          # This output is for debugging and illustration purposes only
+          output "principals" {
+            value = join(",", var.principals)
           }   
   # Match the class that is used in the "provision" statement in the gcs Resource Definition
   criteria:
