@@ -2,10 +2,10 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-iam-member-read-only
+  id: wi-gcp-gcs-iam-member-read-only
 entity:
   driver_type: humanitec/terraform
-  name: gcs-iam-member-read-only
+  name: wi-gcp-gcs-iam-member-read-only
   type: gcp-iam-policy-binding
   # Obtain the Cloud Account from a config resource
   driver_account: ${resources['config.default#app-config'].account}

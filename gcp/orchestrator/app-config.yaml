@@ -4,9 +4,9 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-app-config
+  id: wi-gcp-app-config
 entity:
-  name: gcs-app-config
+  name: wi-gcp-app-config
   type: config
   driver_type: humanitec/template
   driver_account: htc-docs-tutorials-demo-temp
@@ -20,4 +20,4 @@ entity:
     - class: default
       res_id: app-config
       env_type: development
-      app_id: workload-identity-test
+      app_id: workload-identity-test-gcp

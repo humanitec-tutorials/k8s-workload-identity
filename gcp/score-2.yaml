@@ -14,6 +14,7 @@ containers:
 resources:
   bucket-1:
     type: gcs
+    class: read-only
   bucket-2:
     type: gcs
   shared-bucket:

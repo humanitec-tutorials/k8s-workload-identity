@@ -3,13 +3,12 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-gke-config
+  id: wi-gcp-gke-config
 entity:
-  name: gcs-gke-config
+  name: wi-gcp-gke-config
   type: config
   driver_type: humanitec/template
-  # The identity configured in the Cloud Account returned here needs permission to deploy Workloads
-  # to your GKE cluster
+  # The identity configured in the Cloud Account returned here needs permission to deploy Workloads to your GKE cluster
   driver_account: htc-docs-tutorials-demo-temp
   driver_inputs:
     values:
@@ -21,4 +20,4 @@ entity:
     - class: default
       res_id: gke-config
       env_type: development
-      app_id: workload-identity-test
+      app_id: workload-identity-test-gcp

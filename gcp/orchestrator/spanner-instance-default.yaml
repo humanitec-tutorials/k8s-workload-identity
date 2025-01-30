@@ -1,11 +1,11 @@
-# This Resource Definition of type 
+# This Resource Definition of type `spanner-instance` uses the Terraform Driver to provision a Spanner instance for the class "default"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: spanner-instance-default
+  id: wi-gcp-spanner-instance-default
 entity:
   driver_type: humanitec/terraform
-  name: spanner-instance-default
+  name: wi-gcp-spanner-instance-default
   type: spanner-instance
   # The identity used in this Cloud Account needs permissions to manage Spanner instances
   driver_account: ${resources['config.default#app-config'].account}
@@ -89,4 +89,4 @@ entity:
   # Adjust matching criteria as required
   criteria:
     - class: default
-      app_id: workload-identity-test
+      app_id: workload-identity-test-gcp

@@ -2,10 +2,10 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: gcs-default
+  id: wi-gcp-gcs-default
 entity:
   driver_type: humanitec/terraform
-  name: gcs-default
+  name: wi-gcp-gcs-default
   type: gcs
   # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
   driver_account: ${resources['config.default#app-config'].account}
@@ -84,4 +84,4 @@ entity:
   # Adjust matching criteria as required
   criteria:
     - class: default
-      app_id: workload-identity-test
+      app_id: workload-identity-test-gcp

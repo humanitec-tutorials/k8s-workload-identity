@@ -3,9 +3,9 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: custom-workload-for-wi
+  id: wi-gcp-custom-workload
 entity:
-  name: custom-workload-for-wi
+  name: wi-gcp-custom-workload
   type: workload
   driver_type: humanitec/template
   driver_inputs:
@@ -20,4 +20,4 @@ entity:
               value: ${resources.k8s-service-account.outputs.name}
   # Adjust matching criteria as required
   criteria:
-  - app_id: workload-identity-test
+  - app_id: workload-identity-test-gcp
