@@ -1,13 +1,14 @@
-# This Resource Definition of type `gcs` uses the Terraform Driver to provision a gcs bucket for the class "default"
+# This Resource Definition of type `spanner-instance` implements the "conrete" resource in the Delegator pattern
+# It uses the Terraform Driver to provision a spanner instance
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-gcs-default
+  id: wi-gcp-spanner-instance-concrete
 entity:
   driver_type: humanitec/terraform
-  name: wi-gcp-gcs-default
-  type: gcs
-  # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
+  name: wi-gcp-spanner-instance-concrete
+  type: spanner-instance
+  # The identity used in this Cloud Account needs permissions to manage Spanner instances
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
@@ -59,29 +60,31 @@ entity:
             }
           }
 
-          resource "random_string" "bucket_name" {
-            length  = 10
+          resource "random_string" "instance_name" {
+            length  = 20
             special = false
             lower   = true
             upper   = false
+            numeric = false
           }
 
-          resource "google_storage_bucket" "bucket" {
-            project                     = var.project_id
-            name                        = random_string.bucket_name.result
-            location                    = var.region
-            uniform_bucket_level_access = true
-            force_destroy               = true
+          resource "google_spanner_instance" "instance" {
+            project                      = var.project_id
+            config                       = "regional-$\{var.region}"
+            name                         = random_string.instance_name.result
+            display_name                 = random_string.instance_name.result
+            processing_units             = 100
+            edition                      = "STANDARD"
+            default_backup_schedule_type = "AUTOMATIC"
           }
         outputs.tf: |
-          output "name" {
-            value = google_storage_bucket.bucket.name
+          output "instance" {
+            value = google_spanner_instance.instance.name
           }
-  provision:
-    # Co-provision an IAM Policy resource for this class of gcs
-    gcp-iam-policy-binding.gcs-default:
-      is_dependent: true
-  # Adjust matching criteria as required
+          output "project" {
+            value = var.project_id
+          }
+  # Adjust matching criteria as required, but must match class "concrete"
   criteria:
-    - class: default
-      app_id: workload-identity-test-gcp
+  - class: concrete
+    app_id: workload-identity-test-gcp

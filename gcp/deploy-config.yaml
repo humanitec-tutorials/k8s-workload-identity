@@ -7,3 +7,6 @@ workloads:
   - name: hello-gcp-2
     specFile: ./score-2.yaml
     image: nginx
+  - name: hello-gcp-3
+    specFile: ./score-3.yaml
+    image: nginx

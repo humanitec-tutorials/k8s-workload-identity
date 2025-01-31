@@ -1,7 +1,7 @@
 apiVersion: score.dev/v1b1
 
 metadata:
-  name: hello-gcp-2
+  name: hello-gcp-3
 
 containers:
   hello-world:
@@ -12,5 +12,5 @@ containers:
 resources:
   bucket-2:
     type: gcs
-    class: read-only
+    class: admin
     id: bucket-2

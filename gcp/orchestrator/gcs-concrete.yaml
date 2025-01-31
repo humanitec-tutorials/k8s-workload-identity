@@ -1,11 +1,12 @@
-# This Resource Definition of type `gcs` uses the Terraform Driver to provision a gcs bucket for the class "read-only"
+# This Resource Definition of type `gcs` implements the "conrete" resource in the Delegator pattern
+# It uses the Terraform Driver to provision a gcs bucket
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-gcs-read-only
+  id: wi-gcp-gcs-concrete
 entity:
   driver_type: humanitec/terraform
-  name: wi-gcp-gcs-read-only
+  name: wi-gcp-gcs-concrete
   type: gcs
   # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
   driver_account: ${resources['config.default#app-config'].account}
@@ -77,11 +78,7 @@ entity:
           output "name" {
             value = google_storage_bucket.bucket.name
           }
-  provision:
-    # Co-provision an IAM Policy resource for this class of gcs
-    gcp-iam-policy-binding.gcs-read-only:
-      is_dependent: true
-  # Adjust matching criteria as required
+  # Adjust matching criteria as required, but must match class "concrete"
   criteria:
-    - class: read-only
-      app_id: workload-identity-test-gcp
+  - class: concrete
+    app_id: workload-identity-test-gcp

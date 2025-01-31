@@ -1,12 +1,12 @@
-# This Resource Definition uses the Terraform Driver to create IAM policy for spanner-instance resources of the class "default"
+# This Resource Definition uses the Terraform Driver to create IAM policies for spanner-instance resources of the class "admin"
 # In this scenario, each workload gets its own Spanner instance and permission to manage its own databases inside it.
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-spanner-instance-iam-member-default
+  id: wi-gcp-spanner-instance-iam-member-admin
 entity:
   driver_type: humanitec/terraform
-  name: wi-gcp-spanner-instance-iam-member-default
+  name: wi-gcp-spanner-instance-iam-member-admin
   type: gcp-iam-policy-binding
   # Obtain the Cloud Account from a config resource
   driver_account: ${resources['config.default#app-config'].account}
@@ -14,10 +14,10 @@ entity:
     values:
       variables:
         project_id: ${resources['config.default#app-config'].outputs.project_id}
-        # Obtain the spanner-instance name from the bucket resource this resource depends on.
-        spanner_instance_name: ${resources['spanner-instance.default'].outputs.instance}
+        # Obtain the spanner-instance name from the spanner-instance resource this resource depends on
+        spanner_instance_name: ${resources['spanner-instance.admin'].outputs.instance}
         # This resource selector traverses the Graph via spanner-instance and workload to read the principal output from all k8s-service-account resources
-        principals: ${resources['spanner-instance.default<workload>k8s-service-account'].outputs.principal}
+        principals: ${resources['spanner-instance.admin<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
           access_token: access_token
@@ -62,6 +62,6 @@ entity:
           output "principals" {
             value = join(",", var.principals)
           }   
-  # Match the class that is used in the "provision" statement in the spanner-instance Resource Definition
+  # Match the class that is used in the "provision" statement in the delegator spanner-instance Resource Definition
   criteria:
-    - class: spanner-instance-default
+  - class: spanner-instance-admin

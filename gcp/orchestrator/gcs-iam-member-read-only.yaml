@@ -1,4 +1,4 @@
-# This Resource Definition uses the Terraform Driver to create IAM policy for gcs resources of the class "read-only"
+# This Resource Definition uses the Terraform Driver to create IAM policies for gcs resources of the class "read-only"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:

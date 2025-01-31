@@ -9,18 +9,18 @@ containers:
     variables:
       GCS_BUCKET_1_NAME: ${resources.bucket-1.name}
       GCS_BUCKET_2_NAME: ${resources.bucket-2.name}
-      GCS_SHARED_BUCKET_NAME: ${resources.shared-bucket.name}
       SPANNER_1_INSTANCE: ${resources.spanner-1.instance}
 
 resources:
   bucket-1:
     type: gcs
+    class: admin
+    id: bucket-1
   bucket-2:
     type: gcs
     class: read-only
-  shared-bucket:
-    type: gcs
-    id: shared-bucket
-    class: read-only
+    id: bucket-2
   spanner-1:
     type: spanner-instance
+    class: reader
+    id: spanner-1
