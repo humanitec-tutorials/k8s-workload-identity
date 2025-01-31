@@ -15,7 +15,7 @@ entity:
       templates:
         outputs: |
           gke_project_id: htc-docs-tutorials
-          gke_project_number: 336485447137
+          gke_project_number: "336485447137"
   criteria:
     - class: default
       res_id: gke-config

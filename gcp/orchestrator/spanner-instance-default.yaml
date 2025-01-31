@@ -64,6 +64,7 @@ entity:
             special = false
             lower   = true
             upper   = false
+            numeric = false
           }
 
           resource "google_spanner_instance" "instance" {

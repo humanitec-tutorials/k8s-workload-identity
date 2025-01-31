@@ -20,3 +20,4 @@ resources:
   shared-bucket:
     type: gcs
     id: shared-bucket
+    class: read-only
