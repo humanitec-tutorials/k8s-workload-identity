@@ -7,11 +7,16 @@ containers:
   hello-world:
     image: .
     variables:
+      GCS_PRIVATE_BUCKET_1_NAME: ${resources.private-bucket-1.name}
       GCS_BUCKET_1_NAME: ${resources.bucket-1.name}
       GCS_BUCKET_2_NAME: ${resources.bucket-2.name}
       SPANNER_1_INSTANCE: ${resources.spanner-1.instance}
 
 resources:
+  private-bucket-1:
+    type: gcs
+    class: read-only
+    # no "id" for a private resource
   bucket-1:
     type: gcs
     class: admin
