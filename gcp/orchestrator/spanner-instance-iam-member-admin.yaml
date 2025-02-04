@@ -37,9 +37,7 @@ entity:
           }
           variable "project_id" {}
           variable "spanner_instance_name" {}
-
-          # This variable is a set because a resource selector, which is used
-          # to retrieve it, always returns an array
+          # This variable is a set because a resource selector, which is used to retrieve it, always returns an array
           variable "principals" {
             type = set(string)
           }
