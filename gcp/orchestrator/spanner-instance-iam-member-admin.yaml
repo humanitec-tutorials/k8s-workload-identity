@@ -45,11 +45,9 @@ entity:
           provider "google" {
             access_token = var.access_token
           }
-
           # Create one IAM member for each principal 
           resource "google_spanner_instance_iam_member" "iam_member" {
             for_each = var.principals
-
             project  = var.project_id
             instance = var.spanner_instance_name
             role     = "roles/spanner.databaseAdmin"

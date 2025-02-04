@@ -50,7 +50,6 @@ entity:
         main.tf: |
           provider "google" {
             access_token = var.access_token
-            
             default_labels = {
               "humanitec"  = "true"
               "hum-app"    = var.app_id
@@ -59,7 +58,6 @@ entity:
               "managed-by" = "terraform"
             }
           }
-
           resource "random_string" "instance_name" {
             length  = 20
             special = false
@@ -67,7 +65,6 @@ entity:
             upper   = false
             numeric = false
           }
-
           resource "google_spanner_instance" "instance" {
             project                      = var.project_id
             config                       = "regional-$\{var.region}"
