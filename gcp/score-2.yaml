@@ -1,14 +1,11 @@
 apiVersion: score.dev/v1b1
-
 metadata:
   name: hello-gcp-2
-
 containers:
   hello-world:
     image: .
     variables:
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
-
 resources:
   bucket-2:
     type: gcs

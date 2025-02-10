@@ -9,6 +9,7 @@ entity:
   type: spanner-instance
   driver_inputs:
     values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
       instance: ${resources['spanner-instance.concrete'].outputs.instance}
       project: ${resources['spanner-instance.concrete'].outputs.project}
   provision:

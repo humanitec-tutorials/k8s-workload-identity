@@ -9,6 +9,7 @@ entity:
   type: gcs
   driver_inputs:
     values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
       name: ${resources['gcs.concrete'].outputs.name}
   provision:
     # Co-provision an IAM Policy resource for this class of gcs
