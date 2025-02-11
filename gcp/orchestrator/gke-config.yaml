@@ -8,14 +8,16 @@ entity:
   name: wi-gcp-gke-config
   type: config
   driver_type: humanitec/template
-  # The identity configured in the Cloud Account returned here needs permission to deploy Workloads to your GKE cluster
+  # The identity configured in this Cloud Account needs permission
+  # to deploy Workloads to your GKE cluster
   driver_account: htc-docs-tutorials-demo-temp
   driver_inputs:
     values:
       templates:
         outputs: |
-          gke_project_id: htc-docs-tutorials
-          gke_project_number: "336485447137"
+          gke_project_id: YOURVALUE
+          # Keep the "" around the value of gke_project_number
+          gke_project_number: "YOURVALUE"
   criteria:
     - class: default
       res_id: gke-config
