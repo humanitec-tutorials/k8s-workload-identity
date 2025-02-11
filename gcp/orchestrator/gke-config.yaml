@@ -10,7 +10,7 @@ entity:
   driver_type: humanitec/template
   # The identity configured in this Cloud Account needs permission
   # to deploy Workloads to your GKE cluster
-  driver_account: htc-docs-tutorials-demo-temp
+  driver_account: YOURVALUE
   driver_inputs:
     values:
       templates:
