@@ -17,12 +17,6 @@ entity:
         # effectively matching the one which co-provisioned it.
         gcs_bucket_name: ${resources['gcs.admin'].outputs.name}
         # This resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
-        # that the corresponding `gcs` resource depends on. In case of e.h. a shared `gcs` bucket, this may be more than one. 
-        # Note: the shorter selector version ${resources['workload>k8s-service-account'].outputs.principal} will not work
-        # because the first part of selector works like a normal Resource Descriptor.
-        # It replaces missing values - here, the resource ID - with the current context, i.e. the ID of the current resource.
-        # Since the k8s-service-account has a different ID than workload and service-account, we need to traverse via the gcs
-        # which has the same ID as the current resource.
         principals: ${resources['gcs.admin<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
