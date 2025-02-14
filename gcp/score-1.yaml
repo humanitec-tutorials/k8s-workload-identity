@@ -4,6 +4,7 @@ metadata:
 containers:
   hello-world:
     image: .
+    command: ["sleep","infinity"]
     variables:
       GCS_PRIVATE_BUCKET_1_NAME: ${resources.private-bucket-1.name}
       GCS_BUCKET_1_NAME: ${resources.bucket-1.name}
