@@ -13,10 +13,10 @@ entity:
       arn: ${resources['s3.concrete'].outputs.arn}
       bucket: ${resources['s3.concrete'].outputs.bucket}
       region: ${resources['s3.concrete'].outputs.region}
-#  provision:
-    # Co-provision an IAM Policy resource for this class of s3
-#    aws-policy.s3-read-only:
-#      is_dependent: true
+  provision:
+   # Co-provision an IAM Policy resource for this class of s3
+    aws-policy.s3-read-only:
+      is_dependent: true
   # Adjust matching criteria as required, but must match class "read-only"
   criteria:
   - class: read-only
