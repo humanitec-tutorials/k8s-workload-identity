@@ -1,0 +1,13 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-aws-2
+containers:
+  hello-world:
+    image: .
+    variables:
+      S3_BUCKET_1_NAME: ${resources.bucket-1.name}
+resources:
+  bucket-1:
+    type: s3
+    class: read-only
+    id: bucket-1
