@@ -1,4 +1,4 @@
-# This Resource Definition of type `gcs` implements the "conrete" resource in the Delegator pattern
+# This Resource Definition of type `gcs` implements the "concrete" resource in the Delegator pattern
 # It uses the Terraform Driver to provision a gcs bucket
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
