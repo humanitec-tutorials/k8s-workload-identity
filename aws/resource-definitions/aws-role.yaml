@@ -1,0 +1,87 @@
+# This Resource Definition of type "aws-role" provisions an IAM Role representing a workload identity
+# and associates it with the Kubernetes service account of that workload
+# It expects to depend on the k8s-service-account resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-role
+entity:
+  driver_type: humanitec/terraform
+  name: wi-aws-role
+  type: aws-role
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        region: "${resources['config.default#app-config'].outputs.region}"
+        # Using the id `k8s-cluster`, this reference targets the existing, implicitly created k8s-cluster resource
+        k8s_cluster: "${resources['k8s-cluster.default#k8s-cluster'].outputs.name}"
+        # Obtain the name of the service account with the same class and id as the current resource
+        service_account: "${resources.k8s-service-account.outputs.name}"
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: | 
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+          variable "k8s_cluster" {}
+          variable "service_account" {}
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec                                     = "true"
+                hum-app                                       = var.app_id
+                hum-env                                       = var.env_id
+                hum-res                                       = replace(var.res_id, ".", "-")
+                "alpha.eksctl.io/cluster-name"                = var.k8s_cluster
+                "eksctl.cluster.k8s.io/v1alpha1/cluster-name" = var.k8s_cluster
+                managed-by                                    = "terraform"
+              }
+            }
+          }
+          data "aws_iam_policy_document" "assume_role" {
+            statement {
+              sid    = "AllowEksAuthToAssumeRoleForPodIdentity"
+              effect = "Allow"
+              principals {
+                type        = "Service"
+                identifiers = ["pods.eks.amazonaws.com"]
+              }
+              actions = [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ]
+            }
+          }
+          resource "aws_iam_role" "this" {
+            # Mind the 64 character length limit for role names
+            # Consider using a GUID for the name, and tags for classification
+            name               = "wi_$\{var.app_id}_$\{var.env_id}_$\{var.service_account}"
+            assume_role_policy = data.aws_iam_policy_document.assume_role.json
+          }
+        outputs.tf: |
+          output "arn" {
+            value = aws_iam_role.this.arn
+          }
+  criteria:
+  - app_id: workload-identity-test-aws
