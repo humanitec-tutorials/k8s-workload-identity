@@ -20,6 +20,8 @@ entity:
         region: "${resources['config.default#app-config'].outputs.region}"
         # Using the id `k8s-cluster`, this reference targets the existing, implicitly created k8s-cluster resource
         k8s_cluster: "${resources['k8s-cluster.default#k8s-cluster'].outputs.name}"
+        # Using the id `k8s-namespace`, this reference targets the existing, implicitly created namespace resource
+        k8s_namespace: "${resources['k8s-namespace.default#k8s-namespace'].outputs.namespace}"
         # Obtain the name of the service account with the same class and id as the current resource
         service_account: "${resources.k8s-service-account.outputs.name}"
       credentials_config:
@@ -42,6 +44,7 @@ entity:
           variable "res_id" {}
           variable "region" {}
           variable "k8s_cluster" {}
+          variable "k8s_namespace" {}
           variable "service_account" {}
         main.tf: |
           # Provider credentials are being injected through environment variables
@@ -73,11 +76,19 @@ entity:
               ]
             }
           }
+          # Create the role for the service account
           resource "aws_iam_role" "this" {
             # Mind the 64 character length limit for role names
             # Consider using a GUID for the name, and tags for classification
             name               = "wi_$\{var.app_id}_$\{var.env_id}_$\{var.service_account}"
             assume_role_policy = data.aws_iam_policy_document.assume_role.json
+          }
+          # Create the Pod Identity Association
+          resource "aws_eks_pod_identity_association" "this" {
+            cluster_name    = var.k8s_cluster
+            namespace       = var.k8s_namespace
+            service_account = var.service_account
+            role_arn        = aws_iam_role.this.arn
           }
         outputs.tf: |
           output "arn" {

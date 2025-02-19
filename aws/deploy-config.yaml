@@ -3,7 +3,7 @@ kind: ScoreDeployConfig
 workloads:
   - name: hello-aws-1
     specFile: ./score-1.yaml
-    image: nginx
+    image: public.ecr.aws/aws-cli/aws-cli
   - name: hello-aws-2
     specFile: ./score-2.yaml
-    image: nginx
+    image: public.ecr.aws/aws-cli/aws-cli

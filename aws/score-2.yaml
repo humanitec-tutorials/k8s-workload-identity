@@ -4,6 +4,7 @@ metadata:
 containers:
   hello-world:
     image: .
+    command: ["sleep","infinity"]
     variables:
       S3_BUCKET_1_NAME: ${resources.bucket-1.name}
 resources:
