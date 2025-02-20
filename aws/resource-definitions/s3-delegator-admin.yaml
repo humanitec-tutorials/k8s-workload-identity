@@ -1,4 +1,5 @@
 # This Resource Definition of type `s3` implements a "Delegator" resource for the class "admin"
+# It uses the Template Driver to generate the corresponding IAM policy document
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
@@ -14,9 +15,10 @@ entity:
       bucket_arn: ${resources['s3.concrete'].outputs.arn}
       bucket_name: ${resources['s3.concrete'].outputs.bucket}
       bucket_region: ${resources['s3.concrete'].outputs.region}
+      # Collect the ARNs of all roles requiring the current access class on the S3 bucket
       principals: ${resources['s3.admin<workload>aws-role'].outputs.arn}
       templates:
-        # The init template is used to prepare the "dockerConfigJson" content
+        # The init template is used to prepare the IAM policy document content
         init: |
           iam_policy_document:
             Statement:
@@ -33,10 +35,10 @@ entity:
               - "{{ .driver.values.bucket_arn }}"
               - "{{ .driver.values.bucket_arn }}/*"
         outputs: |
-          principals: {{ .driver.values.principals | toRawJson }}
           arn: {{ .driver.values.bucket_arn | toRawJson }}
           bucket: {{ .driver.values.bucket_name | toRawJson }}
           region: {{ .driver.values.bucket_region | toRawJson }}
+          principals: {{ .driver.values.principals | toRawJson }}
           iam_policy_document: {{ .init.iam_policy_document | toRawJson | quote }}
   provision:
    # Co-provision an IAM Policy resource
