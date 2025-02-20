@@ -4,80 +4,40 @@ kind: Definition
 metadata:
   id: wi-aws-s3-delegator-admin
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/template
   name: wi-aws-s3-delegator-admin
   type: s3
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
-      variables:
-        # Referencing the "concrete" Resource and passing through all of its outputs
-        bucket_arn: ${resources['s3.concrete'].outputs.arn}
-        bucket_name: ${resources['s3.concrete'].outputs.bucket}
-        bucket_region: ${resources['s3.concrete'].outputs.region}
-        principals: ${resources['s3.admin<workload>aws-role'].outputs.arn}
-      credentials_config:
-        environment:
-          AWS_ACCESS_KEY_ID: AccessKeyId
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey
-          AWS_SESSION_TOKEN: SessionToken
-      files:
-        providers.tf: | 
-          terraform {
-            required_providers {
-              aws = {
-                source  = "hashicorp/aws"
-              }
-            }
-          }
-        variables.tf: |
-          variable "bucket_arn" {}
-          variable "bucket_name" {}
-          variable "bucket_region" {}
-          variable "principals" {
-            type = set(string)
-          }
-        main.tf: |
-          # Provider credentials are being injected through environment variables
-          provider "aws" {
-            region = var.bucket_region
-          }
-          # Prepare a policy document for admin access if there are any principals requesting that access
-          data "aws_iam_policy_document" "bucket_access" {
-            count = length(var.principals) > 0 ? 1 : 0
-            statement {
-              sid = "admin"
-              # Enter each eligible role into the bucket policy
-              dynamic "principals" {
-                for_each = var.principals
-                content {
-                  type        = "AWS"
-                  identifiers = ["$\{principals.value}"]
-                }
-              }
-              actions = [
-                "s3:*"
-              ]
-              resources = [
-                var.bucket_arn,
-                "$\{var.bucket_arn}/*",
-              ]
-            }
-          }
-        outputs.tf: |
-          output "arn" {
-            value = var.bucket_arn
-          }
-          output "bucket" {
-            value = var.bucket_name
-          }
-          output "region" {
-            value = var.bucket_region
-          }
-          output "iam_policy_document" {
-            value = length(data.aws_iam_policy_document.bucket_access) > 0 ? data.aws_iam_policy_document.bucket_access[0].json : ""
-          }
+      resClass: ${context.res.class}
+      # Referencing the "concrete" Resource and passing through all of its outputs
+      bucket_arn: ${resources['s3.concrete'].outputs.arn}
+      bucket_name: ${resources['s3.concrete'].outputs.bucket}
+      bucket_region: ${resources['s3.concrete'].outputs.region}
+      principals: ${resources['s3.admin<workload>aws-role'].outputs.arn}
+      templates:
+        # The init template is used to prepare the "dockerConfigJson" content
+        init: |
+          iam_policy_document:
+            Statement:
+            - Sid: {{ .driver.values.resClass | quote }}
+              Action:
+              - "s3:*"
+              Effect: "Allow"
+              Principal:
+                AWS:
+                {{- range .driver.values.principals }}
+                - {{ . | quote }}
+                {{- end }}
+              Resource:
+              - "{{ .driver.values.bucket_arn }}"
+              - "{{ .driver.values.bucket_arn }}/*"
+        outputs: |
+          principals: {{ .driver.values.principals | toRawJson }}
+          arn: {{ .driver.values.bucket_arn | toRawJson }}
+          bucket: {{ .driver.values.bucket_name | toRawJson }}
+          region: {{ .driver.values.bucket_region | toRawJson }}
+          iam_policy_document: {{ .init.iam_policy_document | toRawJson | quote }}
   provision:
    # Co-provision an IAM Policy resource
     aws-policy.s3:
