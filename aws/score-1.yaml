@@ -8,6 +8,7 @@ containers:
     variables:
       S3_PRIVATE_BUCKET_1_NAME: ${resources.private-bucket-1.name}
       S3_BUCKET_1_NAME: ${resources.bucket-1.name}
+      S3_BUCKET_2_NAME: ${resources.bucket-2.name}
 resources:
   private-bucket-1:
     type: s3
@@ -15,9 +16,9 @@ resources:
     # no "id" for a private resource
   bucket-1:
     type: s3
-    class: read-only
+    class: admin
     id: bucket-1
-  # bucket-2:
-  #   type: s3
-  #   class: read-only
-  #   id: bucket-2
+  bucket-2:
+    type: s3
+    class: read-only
+    id: bucket-2

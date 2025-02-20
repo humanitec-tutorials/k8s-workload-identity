@@ -1,6 +1,6 @@
 apiVersion: score.dev/v1b1
 metadata:
-  name: hello-aws-2
+  name: hello-aws-3
 containers:
   hello-world:
     image: .
@@ -10,5 +10,5 @@ containers:
 resources:
   bucket-2:
     type: s3
-    class: read-only
+    class: admin
     id: bucket-2

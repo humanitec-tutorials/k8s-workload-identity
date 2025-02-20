@@ -1,0 +1,151 @@
+# This Resource Definition of type "aws-role" uses the Terraform Driver to provision a bucket policy
+# for an S3 bucket
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-s3-bucket-policy
+entity:
+  driver_type: humanitec/terraform
+  name: wi-aws-s3-bucket-policy
+  type: aws-policy
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: ${context.app.id}
+        env_id: ${context.env.id}
+        res_id: ${context.res.id}
+        region: ${resources['config.default#app-config'].outputs.region}
+        iam_policy_documents: ${resources['aws-policy>s3'].outputs.iam_policy_document}
+        s3_bucket_name: ${resources['s3.concrete'].outputs.bucket}
+        #s3_bucket_arn: ${resources['s3.concrete'].outputs.arn}
+        # Testing the lookup of bucket resources -> selects Delegators AND concrete resource
+        #s3_bucket_all_names: ${resources['aws-policy>s3'].outputs.bucket}
+        # This resource selectors traverse the Graph via s3 and workload to read the "arn" output from all aws-role resources
+        #principals_readonly: ${resources['s3.read-only<workload>aws-role'].outputs.arn}
+        #principals_admin: ${resources['s3.admin<workload>aws-role'].outputs.arn}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: | 
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+          variable "s3_bucket_name" {}
+          variable "iam_policy_documents" {
+            type = set(string)
+          }
+          #variable "s3_bucket_arn" {}
+          #variable "s3_bucket_all_names" {
+          #  type = set(string)
+          #}
+          # This variable is a set because a resource selector, which is used to retrieve it, always returns an array
+          # variable "principals_readonly" {
+          #   type = set(string)
+          # }
+          # variable "principals_admin" {
+          #   type = set(string)
+          # }
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec  = "true"
+                hum-app    = var.app_id
+                hum-env    = var.env_id
+                hum-res    = replace(var.res_id, ".", "-")
+                managed-by = "terraform"
+              }
+            }
+          }
+          # Prepare a policy document for read-only access if there are any principals requesting that access
+          # data "aws_iam_policy_document" "bucket_readonly_access" {
+          #   count = length(var.principals_readonly) > 0 ? 1 : 0
+          #   statement {
+          #     sid = "read-only"
+          #     # Enter each eligible role into the bucket policy
+          #     dynamic "principals" {
+          #       for_each = var.principals_readonly
+          #       content {
+          #         type        = "AWS"
+          #         identifiers = ["$\{principals.value}"]
+          #       }
+          #     }
+          #     actions = [
+          #       "s3:GetObject",
+          #       "s3:GetObjectVersion",
+          #       "s3:ListBucket",
+          #     ]
+          #     resources = [
+          #       var.s3_bucket_arn,
+          #       "$\{var.s3_bucket_arn}/*",
+          #     ]
+          #   }
+          # }
+          # # Prepare a policy document for admin access if there are any principals requesting that access
+          # data "aws_iam_policy_document" "bucket_admin_access" {
+          #   count = length(var.principals_admin) > 0 ? 1 : 0
+          #   statement {
+          #     sid = "admin"
+          #     # Enter each eligible role into the bucket policy
+          #     dynamic "principals" {
+          #       for_each = var.principals_admin
+          #       content {
+          #         type        = "AWS"
+          #         identifiers = ["$\{principals.value}"]
+          #       }
+          #     }
+          #     actions = [
+          #       "s3:*"
+          #     ]
+          #     resources = [
+          #       var.s3_bucket_arn,
+          #       "$\{var.s3_bucket_arn}/*",
+          #     ]
+          #   }
+          # }
+          # # Prepare a combined policy document
+          # data "aws_iam_policy_document" "combined" {
+          #   source_policy_documents = [
+          #     length(data.aws_iam_policy_document.bucket_readonly_access) > 0 ? data.aws_iam_policy_document.bucket_readonly_access[0].json : "",
+          #     length(data.aws_iam_policy_document.bucket_admin_access) > 0 ? data.aws_iam_policy_document.bucket_admin_access[0].json : ""]
+          # }
+          # Prepare a combined policy document by merging the individual policies
+          data "aws_iam_policy_document" "combined" {
+            source_policy_documents = var.iam_policy_documents
+          }
+          # Create the actual bucket policy using the combined policy document
+          resource "aws_s3_bucket_policy" "bucket_policy" {
+            bucket = var.s3_bucket_name
+            policy = data.aws_iam_policy_document.combined.json
+          }
+        outputs.tf: |
+          # No output "arn". A bucket policy does not have an ARN
+          # This output is for debugging and illustration purposes only
+          # output "principals" {
+          #   value = join(",", var.principals)
+          # }
+          output "bucket_policy" {
+            value = aws_s3_bucket_policy.bucket_policy.policy
+          }
+          #output "s3_bucket_all_names" {
+          #  value = join(",", var.s3_bucket_all_names)
+          #}
+  # Match the class that is used in the "provision" statement in the Delegator s3 Resource Definition
+  criteria:
+  - class: s3

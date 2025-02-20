@@ -1,11 +1,11 @@
-# This Resource Definition of type `s3` implements a "Delegator" resource for the class "read-only"
+# This Resource Definition of type `s3` implements a "Delegator" resource for the class "admin"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-s3-delegator-read-only
+  id: wi-aws-s3-delegator-admin
 entity:
   driver_type: humanitec/terraform
-  name: wi-aws-s3-delegator-read-only
+  name: wi-aws-s3-delegator-admin
   type: s3
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
@@ -16,7 +16,7 @@ entity:
         bucket_arn: ${resources['s3.concrete'].outputs.arn}
         bucket_name: ${resources['s3.concrete'].outputs.bucket}
         bucket_region: ${resources['s3.concrete'].outputs.region}
-        principals: ${resources['s3.read-only<workload>aws-role'].outputs.arn}
+        principals: ${resources['s3.admin<workload>aws-role'].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId
@@ -43,11 +43,11 @@ entity:
           provider "aws" {
             region = var.bucket_region
           }
-          # Prepare a policy document for read-only access if there are any principals requesting that access
+          # Prepare a policy document for admin access if there are any principals requesting that access
           data "aws_iam_policy_document" "bucket_access" {
             count = length(var.principals) > 0 ? 1 : 0
             statement {
-              sid = "read-only"
+              sid = "admin"
               # Enter each eligible role into the bucket policy
               dynamic "principals" {
                 for_each = var.principals
@@ -57,9 +57,7 @@ entity:
                 }
               }
               actions = [
-                "s3:GetObject",
-                "s3:GetObjectVersion",
-                "s3:ListBucket"
+                "s3:*"
               ]
               resources = [
                 var.bucket_arn,
@@ -84,7 +82,7 @@ entity:
    # Co-provision an IAM Policy resource
     aws-policy.s3:
       is_dependent: true
-  # Adjust matching criteria as required, but must match class "read-only"
+  # Adjust matching criteria as required, but must match class "admin"
   criteria:
-  - class: read-only
+  - class: admin
     app_id: workload-identity-test-aws
