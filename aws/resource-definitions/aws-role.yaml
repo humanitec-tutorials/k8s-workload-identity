@@ -24,6 +24,8 @@ entity:
         k8s_namespace: "${resources['k8s-namespace.default#k8s-namespace'].outputs.namespace}"
         # Obtain the name of the service account with the same class and id as the current resource
         service_account: "${resources.k8s-service-account.outputs.name}"
+        # Collect the ARNs of all roles requiring the access class on a resource via IAM (identity-based) policies
+        iam_policy_arns: ${resources["aws-role<workload>aws-policy"].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId
@@ -46,6 +48,9 @@ entity:
           variable "k8s_cluster" {}
           variable "k8s_namespace" {}
           variable "service_account" {}
+          variable "iam_policy_arns" {
+            type = set(string)
+          }
         main.tf: |
           # Provider credentials are being injected through environment variables
           provider "aws" {
@@ -83,12 +88,18 @@ entity:
             name               = "wi_$\{var.app_id}_$\{var.env_id}_$\{var.service_account}"
             assume_role_policy = data.aws_iam_policy_document.assume_role.json
           }
-          # Create the Pod Identity Association
+          # Create the EKS Pod Identity Association
           resource "aws_eks_pod_identity_association" "this" {
             cluster_name    = var.k8s_cluster
             namespace       = var.k8s_namespace
             service_account = var.service_account
             role_arn        = aws_iam_role.this.arn
+          }
+          # Attach all required IAM policies
+          resource "aws_iam_role_policy_attachment" "workload_role_attached_policies" {
+            for_each   = var.iam_policy_arns
+            role       = aws_iam_role.this.name
+            policy_arn = each.value
           }
         outputs.tf: |
           output "arn" {

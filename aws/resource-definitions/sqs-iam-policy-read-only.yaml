@@ -1,14 +1,12 @@
-# This Resource Definition of type `s3` implements the "concrete" resource in the Delegator pattern
-# It uses the Terraform Driver to provision an Amazon S3 bucket
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-s3-concrete
+  id: wi-aws-sqs-iam-policy-read-only
 entity:
   driver_type: humanitec/terraform
-  name: wi-aws-s3-concrete
-  type: s3
-  # The identity used in this Cloud Account needs permissions to manage S3 buckets
+  name: wi-aws-sqs-iam-policy-read-only
+  type: aws-policy
+  # The identity used in this Cloud Account needs permissions to create IAM policies
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
@@ -18,6 +16,9 @@ entity:
         env_id: "${context.env.id}"
         res_id: "${context.res.id}"
         region: ${resources['config.default#app-config'].outputs.region}
+        # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
+        guresid: ${context.res.guresid}
+        sqs_arn: ${resources['sqs.read-only'].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId
@@ -30,19 +31,15 @@ entity:
               aws = {
                 source  = "hashicorp/aws"
               }
-              random = {
-                source  = "hashicorp/random"
-              }
             }
           }
         variables.tf: |
-          locals {
-            workload_id = split(".", var.res_id)[1]
-          }
           variable "app_id" {}
           variable "env_id" {}
           variable "res_id" {}
           variable "region" {}
+          variable "guresid" {}
+          variable "sqs_arn" {}
         main.tf: |
           # Provider credentials are being injected through environment variables
           provider "aws" {
@@ -57,31 +54,34 @@ entity:
               }
             }
           }
-          resource "random_string" "bucket_name" {
-            length  = 10
-            special = false
-            lower   = true
-            upper   = false
+          # Prepare the policy document
+          data "aws_iam_policy_document" "sqs_read_only" {
+            statement {
+              sid = "SQSreadonly"
+              effect = "Allow"
+              actions = [
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl",
+                "sqs:ListDeadLetterSourceQueues",
+                "sqs:ListQueues",
+                "sqs:ListMessageMoveTasks",
+                "sqs:ListQueueTags"
+              ]
+              resources = [
+                var.sqs_arn
+              ]
+            }
           }
-          resource "aws_s3_bucket" "bucket" {
-            bucket        = random_string.bucket_name.result
-            force_destroy = true
+          # Create the IAM policy
+          resource "aws_iam_policy" "policy" {
+            name        = var.guresid
+            path        = "/"
+            description = "Read Only IAM Policy for SQS $\{var.sqs_arn}"
+            policy      = data.aws_iam_policy_document.sqs_read_only.json
           }
         outputs.tf: |
           output "arn" {
-            value = aws_s3_bucket.bucket.arn
+            value = aws_iam_policy.policy.arn
           }
-          output "bucket" {
-            value = aws_s3_bucket.bucket.bucket
-          }
-          output "region" {
-            value = aws_s3_bucket.bucket.region
-          }
-          # Required dummy output to fulfill Resource selector in aws-policy Resource
-          output "iam_policy_document" {
-            value = ""
-          }
-  # Adjust matching criteria as required, but must match class "concrete"
   criteria:
-  - class: concrete
-    app_id: workload-identity-test-aws
+  - class: sqs-read-only
