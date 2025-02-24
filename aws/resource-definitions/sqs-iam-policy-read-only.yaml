@@ -65,7 +65,8 @@ entity:
                 "sqs:ListDeadLetterSourceQueues",
                 "sqs:ListQueues",
                 "sqs:ListMessageMoveTasks",
-                "sqs:ListQueueTags"
+                "sqs:ListQueueTags",
+                "sqs:ReceiveMessage"
               ]
               resources = [
                 var.sqs_arn
