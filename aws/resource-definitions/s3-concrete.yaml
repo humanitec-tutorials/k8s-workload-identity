@@ -77,10 +77,10 @@ entity:
           output "region" {
             value = aws_s3_bucket.bucket.region
           }
-          # Required dummy output to fulfill Resource selector in aws-policy Resource
-          output "iam_policy_document" {
-            value = ""
-          }
+  provision:
+   # Co-provision an IAM Policy resource
+    aws-policy.s3-bucket-policy:
+      is_dependent: true
   # Adjust matching criteria as required, but must match class "concrete"
   criteria:
   - class: concrete

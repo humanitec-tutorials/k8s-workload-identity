@@ -18,6 +18,8 @@ entity:
         env_id: "${context.env.id}"
         res_id: "${context.res.id}"
         region: "${resources['config.default#app-config'].outputs.region}"
+        # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
+        guresid: ${context.res.guresid}
         # Using the id `k8s-cluster`, this reference targets the existing, implicitly created k8s-cluster resource
         k8s_cluster: "${resources['k8s-cluster.default#k8s-cluster'].outputs.name}"
         # Using the id `k8s-namespace`, this reference targets the existing, implicitly created namespace resource
@@ -45,6 +47,7 @@ entity:
           variable "env_id" {}
           variable "res_id" {}
           variable "region" {}
+          variable "guresid" {}
           variable "k8s_cluster" {}
           variable "k8s_namespace" {}
           variable "service_account" {}
@@ -67,6 +70,10 @@ entity:
               }
             }
           }
+          locals {
+            # res_id will have the form: modules.<workload_name>
+            workload_name = split(".", var.res_id)[1]
+          }
           data "aws_iam_policy_document" "assume_role" {
             statement {
               sid    = "AllowEksAuthToAssumeRoleForPodIdentity"
@@ -83,9 +90,8 @@ entity:
           }
           # Create the role for the service account
           resource "aws_iam_role" "this" {
-            # Mind the 64 character length limit for role names
-            # Consider using a GUID for the name, and tags for classification
-            name               = "wi_$\{var.app_id}_$\{var.env_id}_$\{var.service_account}"
+            name               = var.guresid
+            description        = "IAM Role for workload $\{local.workload_name} in env $\{var.env_id} of app $\{var.app_id}"
             assume_role_policy = data.aws_iam_policy_document.assume_role.json
           }
           # Create the EKS Pod Identity Association

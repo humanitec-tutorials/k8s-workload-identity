@@ -1,5 +1,5 @@
 # This Resource Definition of type "aws-role" uses the Terraform Driver to provision a bucket policy
-# for an S3 bucket
+# for an S3 bucket it depends on
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
@@ -19,8 +19,10 @@ entity:
         region: ${resources['config.default#app-config'].outputs.region}
         # Reference the bucket for which to provision the bucket policy
         s3_bucket_name: ${resources['s3.concrete'].outputs.bucket}
-        # Read all corresponding IAM policy documents
-        iam_policy_documents: ${resources['aws-policy>s3'].outputs.iam_policy_document}
+        s3_bucket_arn: ${resources['s3.concrete'].outputs.arn}
+        # Determine the roles for each access class through lookups into the Resource Graph
+        role_arns_readonly: ${resources['s3.concrete#@<s3.read-only<workload>aws-role'].outputs.arn}
+        role_arns_admin: ${resources['s3.concrete#@<s3.admin<workload>aws-role'].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId
@@ -40,8 +42,12 @@ entity:
           variable "env_id" {}
           variable "res_id" {}
           variable "region" {}
+          variable "s3_bucket_arn" {}
           variable "s3_bucket_name" {}
-          variable "iam_policy_documents" {
+          variable "role_arns_readonly" {
+            type = set(string)
+          }
+          variable "role_arns_admin" {
             type = set(string)
           }
         main.tf: |
@@ -58,19 +64,70 @@ entity:
               }
             }
           }
-          # Prepare a combined policy document by merging the individual policies
-          data "aws_iam_policy_document" "combined" {
-            source_policy_documents = var.iam_policy_documents
+          # Prepare the policy document for read-only access
+          data "aws_iam_policy_document" "bucket_readonly_access" {
+            count = length(var.role_arns_readonly) > 0 ? 1 : 0
+            statement {
+              sid = "ReadOnly"
+              dynamic "principals" {
+                for_each = var.role_arns_readonly
+                content {
+                  type        = "AWS"
+                  identifiers = ["$\{principals.value}"]
+                }
+              }
+              actions = [
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:ListBucket",
+              ]
+              resources = [
+                var.s3_bucket_arn,
+                "$\{var.s3_bucket_arn}/*",
+              ]
+            }
           }
-          # Create the actual bucket policy using the combined policy document
+          # Prepare the policy document for admin access
+          data "aws_iam_policy_document" "bucket_admin_access" {
+            count = length(var.role_arns_admin) > 0 ? 1 : 0
+            statement {
+              sid = "Admin"
+              dynamic "principals" {
+                for_each = var.role_arns_admin
+                content {
+                  type        = "AWS"
+                  identifiers = ["$\{principals.value}"]
+                }
+              }
+              actions = [
+                "s3:*"
+              ]
+              resources = [
+                var.s3_bucket_arn,
+                "$\{var.s3_bucket_arn}/*",
+              ]
+            }
+          }
+          # Merge policy documents into one
+          data "aws_iam_policy_document" "combined" {
+            source_policy_documents = [
+              length(data.aws_iam_policy_document.bucket_readonly_access) > 0 ? data.aws_iam_policy_document.bucket_readonly_access[0].json : "",
+              length(data.aws_iam_policy_document.bucket_admin_access) > 0 ? data.aws_iam_policy_document.bucket_admin_access[0].json : "",
+              ""]
+          }
+          # Create the bucket policy
           resource "aws_s3_bucket_policy" "bucket_policy" {
             bucket = var.s3_bucket_name
             policy = data.aws_iam_policy_document.combined.json
           }
         outputs.tf: |
-          output "bucket_policy" {
-            value = aws_s3_bucket_policy.bucket_policy.policy
+          # This output is for debugging and illustration purposes only
+          output "role_arns_readonly" {
+            value = join(",", var.role_arns_readonly)
+          }
+          output "role_arns_admin" {
+            value = join(",", var.role_arns_admin)
           }
   # Match the class that is used in the "provision" statement in the Delegator s3 Resource Definition
   criteria:
-  - class: s3
+  - class: s3-bucket-policy

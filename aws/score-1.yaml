@@ -13,7 +13,7 @@ containers:
 resources:
   private-bucket-1:
     type: s3
-    class: admin
+    class: read-only
     # no "id" for a private resource
   bucket-1:
     type: s3
