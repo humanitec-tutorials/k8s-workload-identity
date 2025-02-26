@@ -5,10 +5,11 @@ kind: Definition
 metadata:
   id: wi-gcp-spanner-instance-concrete
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-gcp-spanner-instance-concrete
   type: spanner-instance
-  # The identity used in this Cloud Account needs permissions to manage Spanner instances
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage Spanner instances
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:

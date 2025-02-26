@@ -5,10 +5,11 @@ kind: Definition
 metadata:
   id: wi-gcp-gcs-concrete
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-gcp-gcs-concrete
   type: gcs
-  # The identity used in this Cloud Account needs permissions to manage Cloud Storage buckets
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage Cloud Storage buckets
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:

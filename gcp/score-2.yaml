@@ -4,6 +4,7 @@ metadata:
 containers:
   hello-world:
     image: .
+    command: ["sleep","infinity"]
     variables:
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
 resources:

@@ -1,0 +1,36 @@
+# This Resource Definition provides the configuration for the Terraform Runner
+# to execute Terraform on your own GKE cluster
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-tf-runner-config
+entity:
+  name: wi-gcp-tf-runner-config
+  type: config
+  driver_type: humanitec/template
+  driver_inputs:
+    values:
+      templates:
+        outputs:
+          runner:
+            # The identity used in this Cloud Account is used for starting the
+            # Terraform Runner Jobs on the cluster defined below
+            # It is NOT used to execute the actual Terraform. That is done using the identity
+            # of the "driver_account" defined in the individual Resource Definitions
+            account: YOURORG/YOURACCOUNT
+            cluster:
+              loadbalancer: YOURVALUE
+              name: YOURVALUE
+              project_id: YOURVALUE
+              zone: YOURVALUE
+            cluster_type: gke
+            namespace: humanitec-terraform
+            service_account: humanitec-tf-runner
+        secrets: |
+          agent_url: {{ .driver.secrets.agent_url }}
+    secrets:
+      agent_url: ${resources.agent.outputs.url}
+  criteria:
+  - env_type: development
+    res_id: tf-runner
+    app_id: workload-identity-test-gcp
