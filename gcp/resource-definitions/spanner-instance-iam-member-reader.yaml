@@ -5,7 +5,7 @@ kind: Definition
 metadata:
   id: wi-gcp-spanner-instance-iam-member-reader
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-gcp-spanner-instance-iam-member-reader
   type: gcp-iam-policy-binding
   # Obtain the Cloud Account from a config resource
