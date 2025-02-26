@@ -13,6 +13,10 @@ entity:
       templates:
         outputs:
           runner:
+            # The identity used in this Cloud Account is used for starting the
+            # Terraform Runner Jobs on the cluster defined below
+            # It is NOT used to execute the actual Terraform. That is done using the identity
+            # of the "driver_account" defined in the individual Resource Definitions
             account: YOURORG/YOURACCOUNT
             cluster:
               loadbalancer: YOURVALUE

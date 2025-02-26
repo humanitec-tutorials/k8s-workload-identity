@@ -8,7 +8,8 @@ entity:
   driver_type: humanitec/terraform-runner
   name: wi-gcp-spanner-instance-iam-member-admin
   type: gcp-iam-policy-binding
-  # Obtain the Cloud Account from a config resource
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage IAM members
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
