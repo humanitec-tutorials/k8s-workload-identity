@@ -3,10 +3,11 @@ kind: Definition
 metadata:
   id: wi-aws-sqs-iam-policy-read-only
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-aws-sqs-iam-policy-read-only
   type: aws-policy
-  # The identity used in this Cloud Account needs permissions to create IAM policies
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage IAM policies
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:

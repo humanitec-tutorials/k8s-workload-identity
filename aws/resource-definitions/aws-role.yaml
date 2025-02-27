@@ -6,7 +6,7 @@ kind: Definition
 metadata:
   id: wi-aws-role
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-aws-role
   type: aws-role
   driver_account: ${resources['config.default#app-config'].account}

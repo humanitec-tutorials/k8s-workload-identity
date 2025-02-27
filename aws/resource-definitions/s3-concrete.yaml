@@ -5,10 +5,11 @@ kind: Definition
 metadata:
   id: wi-aws-s3-concrete
 entity:
-  driver_type: humanitec/terraform
+  driver_type: humanitec/terraform-runner
   name: wi-aws-s3-concrete
   type: s3
-  # The identity used in this Cloud Account needs permissions to manage S3 buckets
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage S3 buckets
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
