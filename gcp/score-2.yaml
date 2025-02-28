@@ -10,5 +10,5 @@ containers:
 resources:
   bucket-2:
     type: gcs
-    class: read-only
+    class: gcs-read-only
     id: bucket-2
