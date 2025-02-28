@@ -1,4 +1,4 @@
-# This Resource Definition of type `sqs` implements a "Delegator" resource for the class "admin"
+# This Resource Definition of type `sqs` implements a "Delegator" resource for the class "sqs-admin"
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
@@ -17,7 +17,7 @@ entity:
     # Co-provision an IAM Policy resource for this class of sqs
     aws-policy.sqs-admin:
       match_dependents: true
-  # Adjust matching criteria as required, but must match class "admin"
+  # Adjust matching criteria as required, but must match class "sqs-admin"
   criteria:
-  - class: admin
+  - class: sqs-admin
     app_id: workload-identity-test-aws

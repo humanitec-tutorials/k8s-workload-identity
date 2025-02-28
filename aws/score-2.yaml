@@ -15,5 +15,5 @@ resources:
     id: bucket-2
   sqs-1:
     type: sqs
-    class: read-only
+    class: sqs-read-only
     id: sqs-1

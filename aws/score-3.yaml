@@ -15,5 +15,5 @@ resources:
     id: bucket-2
   sqs-1:
     type: sqs
-    class: admin
+    class: sqs-admin
     id: sqs-1
