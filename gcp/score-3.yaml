@@ -11,9 +11,9 @@ containers:
 resources:
   bucket-2:
     type: gcs
-    class: admin
+    class: gcs-admin
     id: bucket-2
   spanner-1:
     type: spanner-instance
-    class: admin
+    class: spanner-instance-admin
     id: spanner-1

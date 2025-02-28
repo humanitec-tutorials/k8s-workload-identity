@@ -1,11 +1,11 @@
-# This Resource Definition uses the Terraform Driver to create IAM policies for gcs resources of the class "admin"
+# This Resource Definition uses the Terraform Driver to create IAM policies for gcs resources
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-gcs-iam-member-admin
+  id: wi-gcp-gcs-iam-member
 entity:
   driver_type: humanitec/terraform-runner
-  name: wi-gcp-gcs-iam-member-admin
+  name: wi-gcp-gcs-iam-member
   type: gcp-iam-policy-binding
   # The identity used in this Cloud Account is the one executing the Terraform code
   # It needs permissions to manage IAM members
@@ -13,12 +13,12 @@ entity:
   driver_inputs:
     values:
       variables:
-        # Obtain the bucket name from the bucket resource this resource depends on.
-        # This Resource reference will map to a `gcs` resource with the same ID as the present resource,
-        # effectively matching the one which co-provisioned it.
-        gcs_bucket_name: ${resources['gcs.admin'].outputs.name}
-        # This resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
-        principals: ${resources['gcs.admin<workload>k8s-service-account'].outputs.principal}
+        res_class: ${context.res.class}
+        # Obtain the bucket name from the bucket resource this resource depends on (same class and ID)
+        gcs_bucket_name: ${resources.gcs.outputs.name}
+        # This Resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
+        # The first part matches the `gcs` Resource with the same class and ID as the current Resource
+        principals: ${resources['gcs<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
           access_token: access_token
@@ -32,6 +32,7 @@ entity:
             }
           }
         variables.tf: |
+          variable "res_class" {}
           variable "access_token" {
             type      = string
             sensitive = true
@@ -41,15 +42,22 @@ entity:
           variable "principals" {
             type = set(string)
           }
+          # Define the roles for each access class
+          locals {
+            roles = {
+              "gcs-read-only" = "roles/storage.objectViewer"
+              "gcs-admin"     = "roles/storage.objectAdmin"
+            }
+          }
         main.tf: |
           provider "google" {
             access_token = var.access_token
           }
-          # Create one IAM member for each principal 
+          # Create one IAM member for each principal using the role for the current access class
           resource "google_storage_bucket_iam_member" "iam_member" {
             for_each = var.principals
             bucket  = var.gcs_bucket_name
-            role    = "roles/storage.objectAdmin"
+            role    = local.roles[var.res_class]
             member  = each.key
           }
         outputs.tf: |
@@ -57,6 +65,7 @@ entity:
           output "principals" {
             value = join(",", var.principals)
           }   
-  # Match the class that is used in the "provision" statement in the delegator gcs Resource Definition
+  # Match the class that is used in the "provision" statement in the gcs Resource Definition
   criteria:
+  - class: gcs-read-only
   - class: gcs-admin
