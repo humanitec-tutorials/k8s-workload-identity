@@ -13,15 +13,15 @@ containers:
 resources:
   private-bucket-1:
     type: s3
-    class: read-only
+    class: s3-read-only
     # no "id" for a private resource
   bucket-1:
     type: s3
-    class: admin
+    class: s3-admin
     id: bucket-1
   bucket-2:
     type: s3
-    class: read-only
+    class: s3-read-only
     id: bucket-2
   sqs-1:
     type: sqs

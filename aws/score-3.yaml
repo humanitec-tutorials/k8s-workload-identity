@@ -11,7 +11,7 @@ containers:
 resources:
   bucket-2:
     type: s3
-    class: admin
+    class: s3-admin
     id: bucket-2
   sqs-1:
     type: sqs

@@ -21,8 +21,8 @@ entity:
         s3_bucket_name: ${resources['s3.concrete'].outputs.bucket}
         s3_bucket_arn: ${resources['s3.concrete'].outputs.arn}
         # Determine the roles for each access class through lookups into the Resource Graph
-        role_arns_readonly: ${resources['s3.concrete#@<s3.read-only<workload>aws-role'].outputs.arn}
-        role_arns_admin: ${resources['s3.concrete#@<s3.admin<workload>aws-role'].outputs.arn}
+        role_arns_readonly: ${resources['s3.concrete#@<s3.s3-read-only<workload>aws-role'].outputs.arn}
+        role_arns_admin: ${resources['s3.concrete#@<s3.s3-admin<workload>aws-role'].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId
