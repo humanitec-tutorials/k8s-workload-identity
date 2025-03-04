@@ -1,0 +1,24 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-gcp-1
+containers:
+  hello-world:
+    image: .
+    command: ["sleep","infinity"]
+    variables:
+      GCS_PRIVATE_BUCKET_1_NAME: ${resources.private-bucket-1.name}
+      GCS_BUCKET_1_NAME: ${resources.bucket-1.name}
+      GCS_BUCKET_2_NAME: ${resources.bucket-2.name}
+      SPANNER_1_INSTANCE: ${resources.spanner-1.instance}
+resources:
+  private-bucket-1:
+    type: gcs
+  bucket-1:
+    type: gcs
+    id: bucket-1
+  bucket-2:
+    type: gcs
+    id: bucket-2
+  spanner-1:
+    type: spanner-instance
+    id: spanner-1

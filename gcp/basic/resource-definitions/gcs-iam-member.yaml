@@ -1,0 +1,62 @@
+# This Resource Definition uses the Terraform Driver to create IAM policies for gcs resources
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-gcs-iam-member
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-gcp-gcs-iam-member
+  type: gcp-iam-policy-binding
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage IAM members
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      variables:
+        res_class: ${context.res.class}
+        # Obtain the bucket name from the bucket resource this resource depends on
+        gcs_bucket_name: ${resources['gcs.default'].outputs.name}
+        # This Resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
+        principals: ${resources['gcs.default<workload>k8s-service-account'].outputs.principal}
+      credentials_config:
+        variables:
+          access_token: access_token
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+            }
+          }
+        variables.tf: |
+          variable "res_class" {}
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "gcs_bucket_name" {}
+          # This variable is a set because a resource selector, which is used to retrieve it, always returns an array
+          variable "principals" {
+            type = set(string)
+          }
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+          }
+          # Create one IAM member for each principal using a role of your choice
+          resource "google_storage_bucket_iam_member" "iam_member" {
+            for_each = var.principals
+            bucket  = var.gcs_bucket_name
+            role    = "roles/storage.objectAdmin"
+            member  = each.key
+          }
+        outputs.tf: |
+          # This output is for debugging and illustration purposes only
+          output "principals" {
+            value = join(",", var.principals)
+          }   
+  # Match the class that is used in the "provision" statement in the gcs Resource Definition
+  criteria:
+  - class: gcs-default
