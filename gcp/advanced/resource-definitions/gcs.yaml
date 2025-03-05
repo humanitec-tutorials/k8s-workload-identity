@@ -3,10 +3,10 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-gcs-concrete
+  id: wi-gcp-gcs
 entity:
   driver_type: humanitec/terraform-runner
-  name: wi-gcp-gcs-concrete
+  name: wi-gcp-gcs
   type: gcs
   # The identity used in this Cloud Account is the one executing the Terraform code
   # It needs permissions to manage Cloud Storage buckets
@@ -76,7 +76,6 @@ entity:
           output "name" {
             value = google_storage_bucket.bucket.name
           }
-  # Adjust matching criteria as required, but must match class "concrete"
+  # Adjust matching criteria as required
   criteria:
-  - class: concrete
-    app_id: workload-identity-test-gcp
+  - app_id: workload-identity-test-gcp
