@@ -1,15 +1,14 @@
-# This Resource Definition of type `s3` implements the "concrete" resource in the Delegator pattern
-# It uses the Terraform Driver to provision an Amazon S3 bucket
+# This Resource Definition of type `sqs` uses the Terraform Runner Driver to provision an Amazon SQS service
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-s3-concrete
+  id: wi-aws-sqs
 entity:
   driver_type: humanitec/terraform-runner
-  name: wi-aws-s3-concrete
-  type: s3
+  name: wi-aws-sqs
+  type: sqs
   # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage S3 buckets
+  # It needs permissions to manage SQS services
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
@@ -58,31 +57,30 @@ entity:
               }
             }
           }
-          resource "random_string" "bucket_name" {
+          resource "random_string" "sqs_name" {
             length  = 10
             special = false
             lower   = true
             upper   = false
           }
-          resource "aws_s3_bucket" "bucket" {
-            bucket        = random_string.bucket_name.result
-            force_destroy = true
+          resource "aws_sqs_queue" "queue" {
+            name = random_string.sqs_name.result
           }
         outputs.tf: |
           output "arn" {
-            value = aws_s3_bucket.bucket.arn
-          }
-          output "bucket" {
-            value = aws_s3_bucket.bucket.bucket
+            value = aws_sqs_queue.queue.arn
           }
           output "region" {
-            value = aws_s3_bucket.bucket.region
+            value = var.region
+          }
+          output "url" {
+            value = aws_sqs_queue.queue.url
           }
   provision:
-   # Co-provision an IAM Policy resource
-    aws-policy.s3-bucket-policy:
-      is_dependent: true
-  # Adjust matching criteria as required, but must match class "concrete"
+    # Co-provision an IAM Policy resource for this sqs
+    # It will have the same class and ID as the present resource
+    aws-policy.sqs-default:
+      match_dependents: true
+  # Adjust matching criteria as required
   criteria:
-  - class: concrete
-    app_id: workload-identity-test-aws
+  - app_id: workload-identity-test-aws

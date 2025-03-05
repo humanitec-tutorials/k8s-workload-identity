@@ -1,0 +1,25 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-aws-1
+containers:
+  hello-world:
+    image: .
+    command: ["sleep","infinity"]
+    variables:
+      S3_PRIVATE_BUCKET_1_NAME: ${resources.private-bucket-1.name}
+      S3_BUCKET_1_NAME: ${resources.bucket-1.name}
+      S3_BUCKET_2_NAME: ${resources.bucket-2.name}
+      SQS_1_URL: ${resources.sqs-1.url}
+resources:
+  private-bucket-1:
+    type: s3
+    # no "id" for a private resource
+  bucket-1:
+    type: s3
+    id: bucket-1
+  bucket-2:
+    type: s3
+    id: bucket-2
+  sqs-1:
+    type: sqs
+    id: sqs-1

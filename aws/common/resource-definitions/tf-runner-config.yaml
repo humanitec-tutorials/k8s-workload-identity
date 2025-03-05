@@ -17,10 +17,10 @@ entity:
             # Terraform Runner Jobs on the cluster defined below
             # It is NOT used to execute the actual Terraform. That is done using the identity
             # of the "driver_account" defined in the individual Resource Definitions
-            account: tobmaster/my-aws-temp-cred
+            account: YOURORG/YOURVALUE
             cluster:
-              name: tobi-demo-cluster
-              region: eu-north-1
+              name: YOURVALUE
+              region: YOURVALUE
               loadbalancer: YOURVALUE
               loadbalancer_hosted_zone: YOURVALUE
               zone: YOURVALUE

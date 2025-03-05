@@ -10,9 +10,9 @@ entity:
   driver_inputs:
     values:
       # Referencing the "concrete" Resource and passing through all of its outputs
-      arn: ${resources['s3.concrete'].outputs.arn}
-      name: ${resources['s3.concrete'].outputs.bucket}
-      region: ${resources['s3.concrete'].outputs.region}
+      arn: ${resources['s3.default'].outputs.arn}
+      name: ${resources['s3.default'].outputs.bucket}
+      region: ${resources['s3.default'].outputs.region}
   # Adjust matching criteria as required, but must match all classes
   criteria:
   - class: s3-admin

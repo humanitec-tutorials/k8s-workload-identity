@@ -1,15 +1,14 @@
-# This Resource Definition of type `sqs` implements the "concrete" resource in the Delegator pattern
-# It uses the Terraform Driver to provision an Amazon SQS service
+# This Resource Definition of type `s3` uses the Terraform Runner Driver to provision an Amazon S3 bucket
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-sqs-concrete
+  id: wi-aws-s3
 entity:
   driver_type: humanitec/terraform-runner
-  name: wi-aws-sqs-concrete
-  type: sqs
+  name: wi-aws-s3
+  type: s3
   # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage SQS services
+  # It needs permissions to manage S3 buckets
   driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
@@ -58,26 +57,30 @@ entity:
               }
             }
           }
-          resource "random_string" "sqs_name" {
+          resource "random_string" "bucket_name" {
             length  = 10
             special = false
             lower   = true
             upper   = false
           }
-          resource "aws_sqs_queue" "queue" {
-            name = random_string.sqs_name.result
+          resource "aws_s3_bucket" "bucket" {
+            bucket        = random_string.bucket_name.result
+            force_destroy = true
           }
         outputs.tf: |
           output "arn" {
-            value = aws_sqs_queue.queue.arn
+            value = aws_s3_bucket.bucket.arn
+          }
+          output "bucket" {
+            value = aws_s3_bucket.bucket.bucket
           }
           output "region" {
-            value = var.region
+            value = aws_s3_bucket.bucket.region
           }
-          output "url" {
-            value = aws_sqs_queue.queue.url
-          }
-  # Adjust matching criteria as required, but must match class "concrete"
+  provision:
+    # Co-provision an IAM Policy resource
+    aws-policy.s3-bucket-policy:
+      is_dependent: true
+  # Adjust matching criteria as required
   criteria:
-  - class: concrete
-    app_id: workload-identity-test-aws
+  - app_id: workload-identity-test-aws

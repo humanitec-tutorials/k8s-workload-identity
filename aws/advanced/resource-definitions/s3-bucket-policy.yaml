@@ -18,11 +18,11 @@ entity:
         res_id: ${context.res.id}
         region: ${resources['config.default#app-config'].outputs.region}
         # Reference the bucket for which to provision the bucket policy
-        s3_bucket_name: ${resources['s3.concrete'].outputs.bucket}
-        s3_bucket_arn: ${resources['s3.concrete'].outputs.arn}
+        s3_bucket_name: ${resources['s3.default'].outputs.bucket}
+        s3_bucket_arn: ${resources['s3.default'].outputs.arn}
         # Determine the roles for each access class through lookups into the Resource Graph
-        role_arns_readonly: ${resources['s3.concrete#@<s3.s3-read-only<workload>aws-role'].outputs.arn}
-        role_arns_admin: ${resources['s3.concrete#@<s3.s3-admin<workload>aws-role'].outputs.arn}
+        role_arns_readonly: ${resources['s3.default#@<s3.s3-read-only<workload>aws-role'].outputs.arn}
+        role_arns_admin: ${resources['s3.default#@<s3.s3-admin<workload>aws-role'].outputs.arn}
       credentials_config:
         environment:
           AWS_ACCESS_KEY_ID: AccessKeyId

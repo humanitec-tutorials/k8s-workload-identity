@@ -10,11 +10,12 @@ entity:
   driver_inputs:
     values:
       # Referencing the "concrete" Resource and passing through all of its outputs
-      arn: ${resources['sqs.concrete'].outputs.arn}
-      region: ${resources['sqs.concrete'].outputs.region}
-      url: ${resources['sqs.concrete'].outputs.url}
+      arn: ${resources['sqs.default'].outputs.arn}
+      region: ${resources['sqs.default'].outputs.region}
+      url: ${resources['sqs.default'].outputs.url}
   provision:
     # Co-provision an IAM Policy resource for this class of sqs
+    # It will have the same class and ID as the present resource
     aws-policy:
       match_dependents: true
   # Adjust matching criteria as required, but must match all classes
