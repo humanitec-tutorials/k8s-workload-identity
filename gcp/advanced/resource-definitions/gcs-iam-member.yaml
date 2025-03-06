@@ -16,8 +16,17 @@ entity:
         res_class: ${context.res.class}
         # Obtain the bucket name from the bucket resource this resource depends on (same class and ID)
         gcs_bucket_name: ${resources.gcs.outputs.name}
-        # This Resource selector traverses the Graph via gcs and workload to read the principal output from all k8s-service-account resources
-        # The first part matches the `gcs` Resource with the same class and ID as the current Resource
+        # This Resource selector traverses the Graph to get the "principal" output
+        # from all k8s-service-account resources that require access
+        # 1. Start with the gcs resource of the same class and ID as the present resource
+        #    This effectively matches the gcs Delegator that co-provisioned the present resource
+        # 2. Find all the workloads that depend on that gcs Delegator
+        # 3. Find all the k8s-service-accounts that these workloads depend on
+        # 4. For each k8s-service-account, read its "principal" output
+        # Notes:
+        # - The present gcp-iam-policy-binding depends on the gcs Delegator because the gcs Delegator co-provisions it with is_dependent = true
+        # - The selector may return more than one element because more than one workload may depend on the gcs Delegator
+        #   if the gcs Delegator is a Shared Resource
         principals: ${resources['gcs<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:
@@ -65,7 +74,7 @@ entity:
           output "principals" {
             value = join(",", var.principals)
           }   
-  # Match the class that is used in the "provision" statement in the gcs Resource Definition
+  # Match the class that is used in the "provision" statement in the gcs Delegator Resource Definition
   criteria:
   - class: gcs-read-only
   - class: gcs-admin

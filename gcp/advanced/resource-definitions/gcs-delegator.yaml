@@ -13,7 +13,7 @@ entity:
       name: ${resources['gcs.default'].outputs.name}
   provision:
     # Co-provision an IAM Policy resource for this class of gcs
-    # The resource will have the same class and ID
+    # The gcp-iam-policy-binding resource will have the same class and ID as the present resource
     gcp-iam-policy-binding:
       is_dependent: true
   # Adjust matching criteria as required, but must match all access classes

@@ -14,6 +14,7 @@ entity:
       project: ${resources['spanner-instance.default'].outputs.project}
   provision:
     # Co-provision an IAM Policy resource for this class of spanner-instance
+    # The gcp-iam-policy-binding resource will have the same class and ID as the present resource
     gcp-iam-policy-binding:
       is_dependent: true
   # Adjust matching criteria as required, but must match all access classes
