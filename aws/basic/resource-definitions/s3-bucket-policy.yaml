@@ -20,7 +20,17 @@ entity:
         # Reference the bucket for which to provision the bucket policy
         s3_bucket_name: ${resources['s3.default'].outputs.bucket}
         s3_bucket_arn: ${resources['s3.default'].outputs.arn}
-        # Determine the roles through a lookup into the Resource Graph
+        # This Resource selector traverses the Graph to get the "arn" output
+        # from all aws-role resources that require access
+        # 1. Start with the s3 resource of class "default" and the same ID as the present resource
+        #    This effectively matches the s3 that co-provisioned the present resource
+        # 2. Find all the workloads that depend on that s3 (direct and indirect)
+        # 3. Find all the aws-roles that these workloads depend on
+        # 4. For each aws-role, read its "arn" output
+        # Notes:
+        # - The workload depends on the aws-role because the k8s-service-account co-provisions the aws-role with match_dependents: true
+        # - The selector may return more than one element because more than one workload may depend on the s3
+        #   if the s3 is a Shared Resource
         role_arns: ${resources['s3.default<workload>aws-role'].outputs.arn}
       credentials_config:
         environment:

@@ -78,7 +78,8 @@ entity:
             value = aws_s3_bucket.bucket.region
           }
   provision:
-    # Co-provision an IAM Policy resource
+    # Co-provision an IAM Policy resource of class "s3-bucket-policy"
+    # By not specifying an ID, the co-provisioned aws-policy will have the same ID as the present resource
     aws-policy.s3-bucket-policy:
       is_dependent: true
   # Adjust matching criteria as required

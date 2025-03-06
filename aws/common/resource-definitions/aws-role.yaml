@@ -26,7 +26,15 @@ entity:
         k8s_namespace: "${resources['k8s-namespace.default#k8s-namespace'].outputs.namespace}"
         # Obtain the name of the service account with the same class and id as the current resource
         service_account: "${resources.k8s-service-account.outputs.name}"
-        # Collect the ARNs of all roles requiring the access class on a resource via IAM (identity-based) policies
+        # This Resource selector traverses the Graph to get the "arn" output
+        # from all aws-policy resources that needs to be attached to the role
+        # 1. Start at this aws-role (same class and ID)
+        # 2. Find all the workloads that depend on that aws-role
+        # 3. Find all the aws-policies that these workloads depend on (direct and indirect)
+        # 4. For each aws-policy, read its "arn" output
+        # Notes:
+        # - The workload depends on the present aws-role depends because the k8s-service-account co-provisions it with match_dependents = true
+        # - The selector may return more than one element because the workload may depend on more than one aws-policy
         iam_policy_arns: ${resources["aws-role<workload>aws-policy"].outputs.arn}
       credentials_config:
         environment:

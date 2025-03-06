@@ -77,8 +77,8 @@ entity:
             value = aws_sqs_queue.queue.url
           }
   provision:
-    # Co-provision an IAM Policy resource for this sqs
-    # It will have the same class and ID as the present resource
+    # Co-provision an IAM Policy resource of class "sqs-default"
+    # By not specifying an ID, the co-provisioned aws-policy will have the same ID as the present resource
     aws-policy.sqs-default:
       match_dependents: true
   # Adjust matching criteria as required

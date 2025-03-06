@@ -21,7 +21,7 @@ entity:
         region: ${resources['config.default#app-config'].outputs.region}
         # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
         guresid: ${context.res.guresid}
-        # Get the sqs resource with the same class and ID as the current resource
+        # Get the sqs resource with the class "default" and the same ID as the current resource
         sqs_arn: ${resources['sqs.default'].outputs.arn}
       credentials_config:
         environment:
