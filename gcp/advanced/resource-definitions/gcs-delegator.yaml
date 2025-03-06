@@ -10,9 +10,10 @@ entity:
   driver_inputs:
     values:
       # Referencing the "concrete" Resource and passing through all of its outputs
-      name: ${resources['gcs.concrete'].outputs.name}
+      name: ${resources['gcs.default'].outputs.name}
   provision:
     # Co-provision an IAM Policy resource for this class of gcs
+    # The gcp-iam-policy-binding resource will have the same class and ID as the present resource
     gcp-iam-policy-binding:
       is_dependent: true
   # Adjust matching criteria as required, but must match all access classes

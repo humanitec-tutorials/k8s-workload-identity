@@ -3,10 +3,10 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-gcp-spanner-instance-concrete
+  id: wi-gcp-spanner-instance
 entity:
   driver_type: humanitec/terraform-runner
-  name: wi-gcp-spanner-instance-concrete
+  name: wi-gcp-spanner-instance
   type: spanner-instance
   # The identity used in this Cloud Account is the one executing the Terraform code
   # It needs permissions to manage Spanner instances
@@ -82,7 +82,6 @@ entity:
           output "project" {
             value = var.project_id
           }
-  # Adjust matching criteria as required, but must match class "concrete"
+  # Adjust matching criteria as required
   criteria:
-  - class: concrete
-    app_id: workload-identity-test-gcp
+  - app_id: workload-identity-test-gcp

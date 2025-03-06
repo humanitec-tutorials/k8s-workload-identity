@@ -18,7 +18,17 @@ entity:
         project_id: ${resources['config.default#app-config'].outputs.project_id}
         # Obtain the spanner-instance name from the spanner-instance resource this resource depends on
         spanner_instance_name: ${resources['spanner-instance.default'].outputs.instance}
-        # This resource selector traverses the Graph via spanner-instance and workload to read the principal output from all k8s-service-account resources
+        # This Resource selector traverses the Graph to get the "principal" output
+        # from all k8s-service-account resources that require access
+        # 1. Start with the spanner-instance resource of class "default" and the same ID as the present resource
+        #    This effectively matches the spanner-instance that co-provisioned the present resource
+        # 2. Find all the workloads that depend on that spanner-instance
+        # 3. Find all the k8s-service-accounts that these workloads depend on
+        # 4. For each k8s-service-account, read its "principal" output
+        # Notes:
+        # - The present gcp-iam-policy-binding depends on the spanner-instance because the spanner-instance co-provisions it with is_dependent = true
+        # - The selector may return more than one element because more than one workload may depend on the spanner-instance
+        #   if the spanner-instance is a Shared Resource
         principals: ${resources['spanner-instance.default<workload>k8s-service-account'].outputs.principal}
       credentials_config:
         variables:

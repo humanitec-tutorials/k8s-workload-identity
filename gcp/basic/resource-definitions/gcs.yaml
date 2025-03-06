@@ -76,7 +76,8 @@ entity:
             value = google_storage_bucket.bucket.name
           }
   provision:
-    # Co-provision an IAM Policy resource for this default gcs
+    # Co-provision an IAM Policy resource of class "gcs-default" for this default gcs
+    # By not specifying an ID, the co-provisioned gcp-iam-policy-binding will have the same ID as the present resource
     gcp-iam-policy-binding.gcs-default:
       is_dependent: true
   # Adjust matching criteria as required
