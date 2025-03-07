@@ -1,4 +1,5 @@
-# This Resource Definition creates an IAM policy for the access class it matched to
+# This Resource Definition of type "aws-policy" uses the Terraform Runner Driver to provision
+# an IAM policy for the access class it matched to
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:

@@ -1,5 +1,5 @@
-# This Resource Definition of type "aws-role" uses the Terraform Driver to provision a bucket policy
-# for an S3 bucket it depends on
+# This Resource Definition of type "aws-policy" uses the Terraform Runner Driver to provision
+# a bucket policy for a S3 bucket it depends on
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
