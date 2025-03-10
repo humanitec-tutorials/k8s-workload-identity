@@ -1,0 +1,26 @@
+# This Resource Definition of type `sqs` implements a "Delegator" resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-sqs-delegator
+entity:
+  driver_type: humanitec/echo
+  name: wi-aws-sqs-delegator
+  type: sqs
+  driver_inputs:
+    values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
+      arn: ${resources['sqs.default'].outputs.arn}
+      region: ${resources['sqs.default'].outputs.region}
+      url: ${resources['sqs.default'].outputs.url}
+  provision:
+    # Co-provision an IAM Policy resource for this class of sqs
+    # By specifying neither class nor ID, the co-provisioned aws-policy will have the same class and ID as the present resource
+    aws-policy:
+      match_dependents: true
+  # Adjust matching criteria as required, but must match all classes
+  criteria:
+  - class: sqs-admin
+    app_id: workload-identity-test-aws
+  - class: sqs-read-only
+    app_id: workload-identity-test-aws

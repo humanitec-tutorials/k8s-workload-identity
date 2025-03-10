@@ -1,0 +1,37 @@
+# This Resource Definition provides the configuration for the Terraform Runner
+# to execute Terraform on your own EKS cluster
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-tf-runner-config
+entity:
+  name: wi-aws-tf-runner-config
+  type: config
+  driver_type: humanitec/template
+  driver_inputs:
+    values:
+      templates:
+        outputs:
+          runner:
+            # The identity used in this Cloud Account is used for starting the
+            # Terraform Runner Jobs on the cluster defined below
+            # It is NOT used to execute the actual Terraform. That is done using the identity
+            # of the "driver_account" defined in the individual Resource Definitions
+            account: YOURORG/YOURVALUE
+            cluster:
+              name: YOURVALUE
+              region: YOURVALUE
+              loadbalancer: YOURVALUE
+              loadbalancer_hosted_zone: YOURVALUE
+              zone: YOURVALUE
+            cluster_type: eks
+            namespace: humanitec-terraform
+            service_account: humanitec-tf-runner
+        secrets: |
+          agent_url: {{ .driver.secrets.agent_url }}
+    secrets:
+      agent_url: ${resources.agent.outputs.url}
+  criteria:
+  - env_type: development
+    res_id: tf-runner
+    app_id: workload-identity-test-aws

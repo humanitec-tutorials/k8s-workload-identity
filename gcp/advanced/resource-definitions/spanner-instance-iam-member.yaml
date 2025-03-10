@@ -1,0 +1,84 @@
+# This Resource Definition uses the Terraform Driver to create IAM policies for spanner-instance resources
+# In this scenario, each workload gets its own Spanner instance and permission to manage its own databases inside it.
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-spanner-instance-iam-member
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-gcp-spanner-instance-iam-member
+  type: gcp-iam-policy-binding
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage IAM members
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      variables:
+        res_class: ${context.res.class}
+        project_id: ${resources['config.default#app-config'].outputs.project_id}
+        # Obtain the spanner-instance name from the spanner-instance resource this resource depends on (same class and ID)
+        spanner_instance_name: ${resources.spanner-instance.outputs.instance}
+        # This Resource selector traverses the Graph to get the "principal" output
+        # from all k8s-service-account resources that require access
+        # 1. Start with the spanner-instance resource of the same class and ID as the present resource
+        #    This effectively matches the spanner-instance Delegator that co-provisioned the present resource
+        # 2. Find all the workloads that depend on that spanner-instance Delegator
+        # 3. Find all the k8s-service-accounts that these workloads depend on
+        # 4. For each k8s-service-account, read its "principal" output
+        # Notes:
+        # - The present gcp-iam-policy-binding depends on the spanner-instance Delegator because the spanner-instance Delegator co-provisions it with is_dependent = true
+        # - The selector may return more than one element because more than one workload may depend on the spanner-instance Delegator
+        #   if the spanner-instance Delegator is a Shared Resource
+        principals: ${resources['spanner-instance<workload>k8s-service-account'].outputs.principal}
+      credentials_config:
+        variables:
+          access_token: access_token
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+            }
+          }
+        variables.tf: |
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "res_class" {}
+          variable "project_id" {}
+          variable "spanner_instance_name" {}
+          # This variable is a set because a resource selector, which is used to retrieve it, always returns an array
+          variable "principals" {
+            type = set(string)
+          }
+          # Define the roles for each access class
+          locals {
+            roles = {
+              "spanner-instance-admin"  = "roles/spanner.databaseAdmin"
+              "spanner-instance-reader" = "roles/spanner.databaseReader"
+            }
+          }
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+          }
+          # Create one IAM member for each principal using the role for the current access class
+          resource "google_spanner_instance_iam_member" "iam_member" {
+            for_each = var.principals
+            project  = var.project_id
+            instance = var.spanner_instance_name
+            role     = local.roles[var.res_class]
+            member   = each.key
+          }
+        outputs.tf: |
+          # This output is for debugging and illustration purposes only
+          output "principals" {
+            value = join(",", var.principals)
+          }   
+  # Match the class that is used in the "provision" statement in the spanner-instance Delegator Resource Definition
+  criteria:
+  - class: spanner-instance-admin
+  - class: spanner-instance-reader

@@ -1,0 +1,25 @@
+# This Resource Definition of type `spanner-instance` implements a "Delegator" resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-spanner-instance-delegator
+entity:
+  driver_type: humanitec/echo
+  name: wi-gcp-spanner-instance-delegator
+  type: spanner-instance
+  driver_inputs:
+    values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
+      instance: ${resources['spanner-instance.default'].outputs.instance}
+      project: ${resources['spanner-instance.default'].outputs.project}
+  provision:
+    # Co-provision an IAM Policy resource for this class of spanner-instance
+    # The gcp-iam-policy-binding resource will have the same class and ID as the present resource
+    gcp-iam-policy-binding:
+      is_dependent: true
+  # Adjust matching criteria as required, but must match all access classes
+  criteria:
+  - class: spanner-instance-admin
+    app_id: workload-identity-test-gcp
+  - class: spanner-instance-reader
+    app_id: workload-identity-test-gcp

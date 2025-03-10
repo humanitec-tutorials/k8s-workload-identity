@@ -1,0 +1,12 @@
+apiVersion: config.humanitec.io/v1b1
+kind: ScoreDeployConfig
+workloads:
+  - name: hello-aws-1
+    specFile: ./score-1.yaml
+    image: public.ecr.aws/aws-cli/aws-cli
+  - name: hello-aws-2
+    specFile: ./score-2.yaml
+    image: public.ecr.aws/aws-cli/aws-cli
+  - name: hello-aws-3
+    specFile: ./score-3.yaml
+    image: public.ecr.aws/aws-cli/aws-cli

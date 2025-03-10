@@ -1,0 +1,87 @@
+# This Resource Definition of type `spanner-instance` implements the "concrete" resource in the Delegator pattern
+# It uses the Terraform Driver to provision a spanner instance
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-spanner-instance
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-gcp-spanner-instance
+  type: spanner-instance
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage Spanner instances
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        project_id: ${resources['config.default#app-config'].outputs.project_id}
+        region: ${resources['config.default#app-config'].outputs.region}
+      credentials_config:
+        variables:
+          access_token: access_token
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+              }
+              random = {
+                source  = "hashicorp/random"
+              }
+            }
+          }
+        variables.tf: |
+          locals {
+            workload_id = split(".", var.res_id)[1]
+          }
+          variable "access_token" {
+            type      = string
+            sensitive = true
+          }
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "project_id" {}
+          variable "region" {}
+        main.tf: |
+          provider "google" {
+            access_token = var.access_token
+            default_labels = {
+              "humanitec"  = "true"
+              "hum-app"    = var.app_id
+              "hum-env"    = var.env_id
+              "hum-res"    = replace(var.res_id, ".", "-")
+              "managed-by" = "terraform"
+            }
+          }
+          resource "random_string" "instance_name" {
+            length  = 20
+            special = false
+            lower   = true
+            upper   = false
+            numeric = false
+          }
+          resource "google_spanner_instance" "instance" {
+            project                      = var.project_id
+            config                       = "regional-$\{var.region}"
+            name                         = random_string.instance_name.result
+            display_name                 = random_string.instance_name.result
+            processing_units             = 100
+            edition                      = "STANDARD"
+            default_backup_schedule_type = "AUTOMATIC"
+          }
+        outputs.tf: |
+          output "instance" {
+            value = google_spanner_instance.instance.name
+          }
+          output "project" {
+            value = var.project_id
+          }
+  # Adjust matching criteria as required
+  criteria:
+  - app_id: workload-identity-test-gcp

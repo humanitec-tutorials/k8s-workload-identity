@@ -1,0 +1,24 @@
+# This Resource Definition of type "config" uses the Template Driver to provide configuration values
+# to other Resource Definitions for accessing the Google Cloud Project
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-app-config
+entity:
+  name: wi-gcp-app-config
+  type: config
+  driver_type: humanitec/template
+  # The identity used in this Cloud Account needs permission to manage
+  # the kinds of cloud resources used in the example
+  driver_account: YOURVALUE
+  driver_inputs:
+    values:
+      templates:
+        outputs: |
+          project_id: YOURVALUE
+          region: YOURVALUE
+  criteria:
+    - class: default
+      res_id: app-config
+      env_type: development
+      app_id: workload-identity-test-gcp

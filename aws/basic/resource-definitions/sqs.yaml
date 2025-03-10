@@ -1,0 +1,87 @@
+# This Resource Definition of type `sqs` uses the Terraform Runner Driver
+# to provision an Amazon SQS service
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-sqs
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-aws-sqs
+  type: sqs
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage SQS services
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        region: ${resources['config.default#app-config'].outputs.region}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+              random = {
+                source  = "hashicorp/random"
+              }
+            }
+          }
+        variables.tf: |
+          locals {
+            workload_id = split(".", var.res_id)[1]
+          }
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec  = "true"
+                hum-app    = var.app_id
+                hum-env    = var.env_id
+                hum-res    = replace(var.res_id, ".", "-")
+                managed-by = "terraform"
+              }
+            }
+          }
+          resource "random_string" "sqs_name" {
+            length  = 10
+            special = false
+            lower   = true
+            upper   = false
+          }
+          resource "aws_sqs_queue" "queue" {
+            name = random_string.sqs_name.result
+          }
+        outputs.tf: |
+          output "arn" {
+            value = aws_sqs_queue.queue.arn
+          }
+          output "region" {
+            value = var.region
+          }
+          output "url" {
+            value = aws_sqs_queue.queue.url
+          }
+  provision:
+    # Co-provision an IAM Policy resource of class "sqs-default"
+    # By not specifying an ID, the co-provisioned aws-policy will have the same ID as the present resource
+    aws-policy.sqs-default:
+      match_dependents: true
+  # Adjust matching criteria as required
+  criteria:
+  - app_id: workload-identity-test-aws

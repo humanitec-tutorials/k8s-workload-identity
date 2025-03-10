@@ -1,0 +1,105 @@
+# This Resource Definition of type "aws-policy" uses the Terraform Runner Driver to provision
+# a bucket policy for a S3 bucket it depends on
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-s3-bucket-policy
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-aws-s3-bucket-policy
+  type: aws-policy
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: ${context.app.id}
+        env_id: ${context.env.id}
+        res_id: ${context.res.id}
+        region: ${resources['config.default#app-config'].outputs.region}
+        # Reference the bucket for which to provision the bucket policy
+        s3_bucket_name: ${resources['s3.default'].outputs.bucket}
+        s3_bucket_arn: ${resources['s3.default'].outputs.arn}
+        # This Resource selector traverses the Graph to get the "arn" output
+        # from all aws-role resources that require access
+        # 1. Start with the s3 resource of class "default" and the same ID as the present resource
+        #    This effectively matches the s3 that co-provisioned the present resource
+        # 2. Find all the workloads that depend on that s3 (direct and indirect)
+        # 3. Find all the aws-roles that these workloads depend on
+        # 4. For each aws-role, read its "arn" output
+        # Notes:
+        # - The workload depends on the aws-role because the k8s-service-account co-provisions the aws-role with match_dependents: true
+        # - The selector may return more than one element because more than one workload may depend on the s3
+        #   if the s3 is a Shared Resource
+        role_arns: ${resources['s3.default<workload>aws-role'].outputs.arn}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: | 
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+          variable "s3_bucket_arn" {}
+          variable "s3_bucket_name" {}
+          variable "role_arns" {
+            type = set(string)
+          }
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec  = "true"
+                hum-app    = var.app_id
+                hum-env    = var.env_id
+                hum-res    = replace(var.res_id, ".", "-")
+                managed-by = "terraform"
+              }
+            }
+          }
+          # Prepare the policy document. Adjust the policy to your scenario
+          data "aws_iam_policy_document" "bucket_access" {
+            statement {
+              sid = "Admin"
+              dynamic "principals" {
+                for_each = var.role_arns
+                content {
+                  type        = "AWS"
+                  identifiers = ["$\{principals.value}"]
+                }
+              }
+              actions = [
+                "s3:*"
+              ]
+              resources = [
+                var.s3_bucket_arn,
+                "$\{var.s3_bucket_arn}/*",
+              ]
+            }
+          }
+          # Create the bucket policy
+          resource "aws_s3_bucket_policy" "bucket_policy" {
+            bucket = var.s3_bucket_name
+            policy = data.aws_iam_policy_document.bucket_access.json
+          }
+        outputs.tf: |
+          # This output is for debugging and illustration purposes only
+          output "role_arns" {
+            value = join(",", var.role_arns)
+          }
+  # Match the class that is used in the "provision" statement in the s3 Resource Definition
+  criteria:
+  - class: s3-bucket-policy

@@ -1,0 +1,19 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-aws-2
+containers:
+  hello-world:
+    image: .
+    command: ["sleep","infinity"]
+    variables:
+      S3_BUCKET_2_NAME: ${resources.bucket-2.name}
+      SQS_1_URL: ${resources.sqs-1.url}
+resources:
+  bucket-2:
+    type: s3
+    class: s3-read-only
+    id: bucket-2
+  sqs-1:
+    type: sqs
+    class: sqs-read-only
+    id: sqs-1

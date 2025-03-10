@@ -1,0 +1,105 @@
+# This Resource Definition creates an IAM policy for the access class it matched to
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-sqs-iam-policy
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-aws-sqs-iam-policy
+  type: aws-policy
+  # The identity used in this Cloud Account is the one executing the Terraform code
+  # It needs permissions to manage IAM policies
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        res_class: "${context.res.class}"
+        region: ${resources['config.default#app-config'].outputs.region}
+        # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
+        guresid: ${context.res.guresid}
+        # Get the sqs resource with the same class and ID as the current resource
+        sqs_arn: ${resources.sqs.outputs.arn}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: |
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "res_class" {}
+          variable "region" {}
+          variable "guresid" {}
+          variable "sqs_arn" {}
+          # Define the actions for each access class
+          locals {
+            actions = {
+              "sqs-admin" = [
+                "sqs:*"
+              ]
+              "sqs-read-only" = [
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl",
+                "sqs:ListDeadLetterSourceQueues",
+                "sqs:ListQueues",
+                "sqs:ListMessageMoveTasks",
+                "sqs:ListQueueTags",
+                "sqs:ReceiveMessage"
+              ]
+            }
+          }
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec  = "true"
+                hum-app    = var.app_id
+                hum-env    = var.env_id
+                hum-res    = replace(var.res_id, ".", "-")
+                managed-by = "terraform"
+              }
+            }
+          }
+          # Prepare the policy document
+          data "aws_iam_policy_document" "sqs_policy" {
+            statement {
+              # Statement IDs must be alphanumeric
+              sid = replace(var.res_class, "-", "")
+              effect = "Allow"
+              actions = local.actions[var.res_class]
+              resources = [
+                var.sqs_arn
+              ]
+            }
+          }
+          # Create the IAM policy
+          resource "aws_iam_policy" "policy" {
+            name        = var.guresid
+            path        = "/"
+            description = "IAM Policy $\{var.res_class} for SQS $\{var.sqs_arn}"
+            policy      = data.aws_iam_policy_document.sqs_policy.json
+          }
+        outputs.tf: |
+          output "arn" {
+            value = aws_iam_policy.policy.arn
+          }
+  # Match all the supported classes
+  criteria:
+  - class: sqs-admin
+  - class: sqs-read-only

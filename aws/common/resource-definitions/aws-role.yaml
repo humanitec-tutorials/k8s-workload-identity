@@ -1,0 +1,123 @@
+# This Resource Definition of type "aws-role" provisions an IAM Role representing a workload identity
+# and associates it with the Kubernetes service account of that workload
+# It expects to depend on the k8s-service-account resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-role
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-aws-role
+  type: aws-role
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: "${context.app.id}"
+        env_id: "${context.env.id}"
+        res_id: "${context.res.id}"
+        region: "${resources['config.default#app-config'].outputs.region}"
+        # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
+        guresid: ${context.res.guresid}
+        # Using the id `k8s-cluster`, this reference targets the existing, implicitly created k8s-cluster resource
+        k8s_cluster: "${resources['k8s-cluster.default#k8s-cluster'].outputs.name}"
+        # Using the id `k8s-namespace`, this reference targets the existing, implicitly created namespace resource
+        k8s_namespace: "${resources['k8s-namespace.default#k8s-namespace'].outputs.namespace}"
+        # Obtain the name of the service account with the same class and id as the current resource
+        service_account: "${resources.k8s-service-account.outputs.name}"
+        # This Resource selector traverses the Graph to get the "arn" output
+        # from all aws-policy resources that needs to be attached to the role
+        # 1. Start at this aws-role (same class and ID)
+        # 2. Find all the workloads that depend on that aws-role
+        # 3. Find all the aws-policies that these workloads depend on (direct and indirect)
+        # 4. For each aws-policy, read its "arn" output
+        # Notes:
+        # - The workload depends on the present aws-role depends because the k8s-service-account co-provisions it with match_dependents = true
+        # - The selector may return more than one element because the workload may depend on more than one aws-policy
+        iam_policy_arns: ${resources["aws-role<workload>aws-policy"].outputs.arn}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: | 
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+          variable "guresid" {}
+          variable "k8s_cluster" {}
+          variable "k8s_namespace" {}
+          variable "service_account" {}
+          variable "iam_policy_arns" {
+            type = set(string)
+          }
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec                                     = "true"
+                hum-app                                       = var.app_id
+                hum-env                                       = var.env_id
+                hum-res                                       = replace(var.res_id, ".", "-")
+                "alpha.eksctl.io/cluster-name"                = var.k8s_cluster
+                "eksctl.cluster.k8s.io/v1alpha1/cluster-name" = var.k8s_cluster
+                managed-by                                    = "terraform"
+              }
+            }
+          }
+          locals {
+            # res_id will have the form: modules.<workload_name>
+            workload_name = split(".", var.res_id)[1]
+          }
+          data "aws_iam_policy_document" "assume_role" {
+            statement {
+              sid    = "AllowEksAuthToAssumeRoleForPodIdentity"
+              effect = "Allow"
+              principals {
+                type        = "Service"
+                identifiers = ["pods.eks.amazonaws.com"]
+              }
+              actions = [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ]
+            }
+          }
+          # Create the role for the service account
+          resource "aws_iam_role" "this" {
+            name               = var.guresid
+            description        = "IAM Role for workload $\{local.workload_name} in env $\{var.env_id} of app $\{var.app_id}"
+            assume_role_policy = data.aws_iam_policy_document.assume_role.json
+          }
+          # Create the EKS Pod Identity Association
+          resource "aws_eks_pod_identity_association" "this" {
+            cluster_name    = var.k8s_cluster
+            namespace       = var.k8s_namespace
+            service_account = var.service_account
+            role_arn        = aws_iam_role.this.arn
+          }
+          # Attach all required IAM policies
+          resource "aws_iam_role_policy_attachment" "workload_role_attached_policies" {
+            for_each   = var.iam_policy_arns
+            role       = aws_iam_role.this.name
+            policy_arn = each.value
+          }
+        outputs.tf: |
+          output "arn" {
+            value = aws_iam_role.this.arn
+          }
+  criteria:
+  - app_id: workload-identity-test-aws

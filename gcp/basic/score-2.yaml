@@ -1,0 +1,13 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-gcp-2
+containers:
+  hello-world:
+    image: .
+    command: ["sleep","infinity"]
+    variables:
+      GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
+resources:
+  bucket-2:
+    type: gcs
+    id: bucket-2

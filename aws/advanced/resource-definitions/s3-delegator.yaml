@@ -1,0 +1,21 @@
+# This Resource Definition of type `s3` implements a "Delegator" resource 
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-s3-delegator
+entity:
+  driver_type: humanitec/echo
+  name: wi-aws-s3-delegator
+  type: s3
+  driver_inputs:
+    values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
+      arn: ${resources['s3.default'].outputs.arn}
+      name: ${resources['s3.default'].outputs.bucket}
+      region: ${resources['s3.default'].outputs.region}
+  # Adjust matching criteria as required, but must match all classes
+  criteria:
+  - class: s3-admin
+    app_id: workload-identity-test-aws
+  - class: s3-read-only
+    app_id: workload-identity-test-aws

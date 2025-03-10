@@ -1,0 +1,146 @@
+# This Resource Definition of type "aws-role" uses the Terraform Driver to provision a bucket policy
+# for an S3 bucket it depends on
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-aws-s3-bucket-policy
+entity:
+  driver_type: humanitec/terraform-runner
+  name: wi-aws-s3-bucket-policy
+  type: aws-policy
+  driver_account: ${resources['config.default#app-config'].account}
+  driver_inputs:
+    values:
+      append_logs_to_error: true
+      variables:
+        app_id: ${context.app.id}
+        env_id: ${context.env.id}
+        res_id: ${context.res.id}
+        region: ${resources['config.default#app-config'].outputs.region}
+        # Reference the "concrete" bucket for which to provision the bucket policy
+        s3_bucket_name: ${resources['s3.default'].outputs.bucket}
+        s3_bucket_arn: ${resources['s3.default'].outputs.arn}
+        # This Resource selector traverses the Graph to get the "arn" output
+        # from all aws-role resources that require "read-only" access to an s3
+        # 1. Start with the s3 resource of class "default" and the same ID as the present resource
+        #    This effectively matches the "concrete" s3 resource
+        # 2. Find all the s3 resources of class "s3-read-only" that depend on that s3
+        #    This effectively matches the s3 Delegator resource for this access class
+        # 3. Find all the workloads that depend on that s3 Delegator
+        # 4. Find all the aws-roles that these workloads depend on
+        # 5. For each aws-role, read its "arn" output
+        # Notes:
+        # - The workload depends on the aws-role because the k8s-service-account co-provisions the aws-role with match_dependents: true
+        # - The selector may return more than one element because more than one workload may depend on the s3 Delegator
+        #   if the s3 is a Shared Resource
+        role_arns_readonly: ${resources['s3.default<s3.s3-read-only<workload>aws-role'].outputs.arn}
+        # Same as the previous selector, but for access class "s3-admin"
+        role_arns_admin: ${resources['s3.default<s3.s3-admin<workload>aws-role'].outputs.arn}
+      credentials_config:
+        environment:
+          AWS_ACCESS_KEY_ID: AccessKeyId
+          AWS_SECRET_ACCESS_KEY: SecretAccessKey
+          AWS_SESSION_TOKEN: SessionToken
+      files:
+        providers.tf: | 
+          terraform {
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+              }
+            }
+          }
+        variables.tf: |
+          variable "app_id" {}
+          variable "env_id" {}
+          variable "res_id" {}
+          variable "region" {}
+          variable "s3_bucket_arn" {}
+          variable "s3_bucket_name" {}
+          variable "role_arns_readonly" {
+            type = set(string)
+          }
+          variable "role_arns_admin" {
+            type = set(string)
+          }
+        main.tf: |
+          # Provider credentials are being injected through environment variables
+          provider "aws" {
+            region = var.region
+            default_tags {
+              tags = {
+                humanitec  = "true"
+                hum-app    = var.app_id
+                hum-env    = var.env_id
+                hum-res    = replace(var.res_id, ".", "-")
+                managed-by = "terraform"
+              }
+            }
+          }
+          # Prepare the policy document for read-only access
+          data "aws_iam_policy_document" "bucket_readonly_access" {
+            count = length(var.role_arns_readonly) > 0 ? 1 : 0
+            statement {
+              sid = "ReadOnly"
+              dynamic "principals" {
+                for_each = var.role_arns_readonly
+                content {
+                  type        = "AWS"
+                  identifiers = ["$\{principals.value}"]
+                }
+              }
+              actions = [
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:ListBucket",
+              ]
+              resources = [
+                var.s3_bucket_arn,
+                "$\{var.s3_bucket_arn}/*",
+              ]
+            }
+          }
+          # Prepare the policy document for admin access
+          data "aws_iam_policy_document" "bucket_admin_access" {
+            count = length(var.role_arns_admin) > 0 ? 1 : 0
+            statement {
+              sid = "Admin"
+              dynamic "principals" {
+                for_each = var.role_arns_admin
+                content {
+                  type        = "AWS"
+                  identifiers = ["$\{principals.value}"]
+                }
+              }
+              actions = [
+                "s3:*"
+              ]
+              resources = [
+                var.s3_bucket_arn,
+                "$\{var.s3_bucket_arn}/*",
+              ]
+            }
+          }
+          # Merge policy documents into one
+          data "aws_iam_policy_document" "combined" {
+            source_policy_documents = [
+              length(data.aws_iam_policy_document.bucket_readonly_access) > 0 ? data.aws_iam_policy_document.bucket_readonly_access[0].json : "",
+              length(data.aws_iam_policy_document.bucket_admin_access) > 0 ? data.aws_iam_policy_document.bucket_admin_access[0].json : "",
+              ""]
+          }
+          # Create the bucket policy
+          resource "aws_s3_bucket_policy" "bucket_policy" {
+            bucket = var.s3_bucket_name
+            policy = data.aws_iam_policy_document.combined.json
+          }
+        outputs.tf: |
+          # This output is for debugging and illustration purposes only
+          output "role_arns_readonly" {
+            value = join(",", var.role_arns_readonly)
+          }
+          output "role_arns_admin" {
+            value = join(",", var.role_arns_admin)
+          }
+  # Match the class that is used in the "provision" statement in the Delegator s3 Resource Definition
+  criteria:
+  - class: s3-bucket-policy

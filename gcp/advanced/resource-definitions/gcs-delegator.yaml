@@ -1,0 +1,24 @@
+# This Resource Definition of type `gcs` implements a "Delegator" resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-gcp-gcs-delegator
+entity:
+  driver_type: humanitec/echo
+  name: wi-gcp-gcs-delegator
+  type: gcs
+  driver_inputs:
+    values:
+      # Referencing the "concrete" Resource and passing through all of its outputs
+      name: ${resources['gcs.default'].outputs.name}
+  provision:
+    # Co-provision an IAM Policy resource for this class of gcs
+    # The gcp-iam-policy-binding resource will have the same class and ID as the present resource
+    gcp-iam-policy-binding:
+      is_dependent: true
+  # Adjust matching criteria as required, but must match all access classes
+  criteria:
+  - class: gcs-admin
+    app_id: workload-identity-test-gcp
+  - class: gcs-read-only
+    app_id: workload-identity-test-gcp
