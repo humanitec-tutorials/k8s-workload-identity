@@ -10,7 +10,7 @@ entity:
   driver_type: humanitec/template
   # The identity used in this Cloud Account needs permission to manage
   # the kinds of cloud resources used in the example
-  driver_account: YOURORG/YOURACCOUNT
+  driver_account: YOURACCOUNT
   driver_inputs:
     values:
       templates:
