@@ -17,7 +17,7 @@ entity:
             # Terraform Runner Jobs on the cluster defined below
             # It is NOT used to execute the actual Terraform. That is done using the identity
             # of the "driver_account" defined in the individual Resource Definitions
-            account: YOURORG/YOURVALUE
+            account: YOURORG/YOURACCOUNT
             cluster:
               name: YOURVALUE
               region: YOURVALUE
