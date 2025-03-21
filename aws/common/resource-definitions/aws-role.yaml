@@ -79,8 +79,10 @@ entity:
             }
           }
           locals {
-            # res_id will have the form: modules.<workload_name>
-            workload_name = split(".", var.res_id)[1]
+            # res_id will have the form: modules.<workload_name> for a non-shared resource
+            # but may just be "someid" for a shared resource
+            # so split by "." and take the last element
+            scope = element(split(".", var.res_id), length(split(".", var.res_id))-1)
           }
           data "aws_iam_policy_document" "assume_role" {
             statement {
@@ -99,7 +101,7 @@ entity:
           # Create the role for the service account
           resource "aws_iam_role" "this" {
             name               = var.guresid
-            description        = "IAM Role for workload $\{local.workload_name} in env $\{var.env_id} of app $\{var.app_id}"
+            description        = "IAM Role for $\{local.scope} in env $\{var.env_id} of app $\{var.app_id}"
             assume_role_policy = data.aws_iam_policy_document.assume_role.json
           }
           # Create the EKS Pod Identity Association
