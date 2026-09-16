@@ -1,0 +1,28 @@
+# This Resource Definition uses the Template Driver to assign a custom Kubernetes service account to a workload
+# to facilitate workload identity
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-custom-workload
+entity:
+  name: wi-azure-custom-workload
+  type: workload
+  driver_type: humanitec/template
+  driver_inputs:
+    values:
+      templates:
+        # Request a resource of type 'k8s-service-account' in the Resource Graph
+        # and add its name to the workload spec
+        # Label the service account to use workload identity
+        outputs: |
+          update:
+            - op: add
+              path: /spec/serviceAccountName
+              value: ${resources.k8s-service-account.outputs.name}
+            - op: add
+              path: /spec/pod/labels
+              value:
+                azure.workload.identity/use: "true"
+  # Adjust matching criteria as required
+  criteria:
+  - app_id: workload-identity-test-azure
