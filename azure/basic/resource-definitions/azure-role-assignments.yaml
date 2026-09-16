@@ -1,6 +1,8 @@
 # This Resource Definition creates Azure role assignments for a scope, i.e. an Azure resource,
-# and a number of principals. Both must be passed in as a variable.
-# The role to be assigned is another variable.
+# and a number of principals. Both must be passed in to the variable "principal_ids"
+# The role to be assigned must be passed in to "role_definition_name"
+# By passing in all required data, this Resource Definition can serve role assigments
+# for all kinds of Azure resources
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
