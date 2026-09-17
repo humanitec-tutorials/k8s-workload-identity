@@ -1,0 +1,67 @@
+# This Resource Definition of type `azure-service-bus-queue` implements a "Delegator" resource
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-service-bus-queue-delegator
+entity:
+  driver_type: humanitec/template
+  name: wi-azure-service-bus-queue-delegator
+  type: azure-service-bus-queue
+  driver_inputs:
+    values:
+      # Referencing the "concrete" Resource to create it and get its id output
+      id: ${resources['azure-service-bus-queue.default'].outputs.id}
+      # Also forward the regular outputs from the "concrete" Resource
+      hostname: ${resources['azure-service-bus-queue.default'].outputs.hostname}
+      namespace: ${resources['azure-service-bus-queue.default'].outputs.namespace}
+      queue: ${resources['azure-service-bus-queue.default'].outputs.queue}
+      # This Resource selector retrieves the principal_ids of the Azure managed identity resources
+      # of all workloads depending on the present storage account resource
+      # 1. Start with the azure-service-bus-queue resource with the same ("@") class and ID as the present resource
+      #    This effectively matches the present resource
+      # 2. Find all the workloads that depend on that azure-service-bus-queue
+      # 3. Find all the azure-managed-identity resources that these workloads depend on
+      # 4. For each azure-managed-identity, read its "principal_id" output
+      principal_ids: ${resources['azure-service-bus-queue.@#@<workload>azure-managed-identity'].outputs.principal_id}
+      # The class of the present resource, used to look up the Azure role to grant
+      res_class: ${context.res.class}
+      # Maps an access class to the Azure built-in role it grants.
+      # Add further entries here to support additional access classes.
+      role_definition_names:
+        azure-service-bus-data-owner: Azure Service Bus Data Owner
+        azure-service-bus-data-sender: Azure Service Bus Data Sender
+      templates:
+        init: |
+          id: {{ .driver.values.id | toRawJson }}
+          hostname: {{ .driver.values.hostname | toRawJson }}
+          namespace: {{ .driver.values.namespace | toRawJson }}
+          queue: {{ .driver.values.queue | toRawJson }}
+          principal_ids: {{ .driver.values.principal_ids | toRawJson }}
+          role_definition_name: {{ get .driver.values.role_definition_names .driver.values.res_class | toRawJson }}
+        outputs: |
+          id: {{ .init.id | toRawJson }}
+          namespace: {{ .init.namespace | toRawJson }}
+          queue: {{ .init.queue | toRawJson }}
+          principal_ids: {{ .init.principal_ids | toRawJson }}
+          role_definition_name: {{ .init.role_definition_name | toRawJson }}
+  # Coprovision an azure-role-assignments resource this service bus queue
+  # Make it dependent to that it may access the id of the present Azure storage account
+  # By not specifying a class and ID, the co-provisioned azure-role-assignments will have
+  # the same class and ID as the present resource
+  provision:
+    azure-role-assignments:
+      is_dependent: true
+      params:
+        # "id" is an output of the present resource
+        scope: ${resources['azure-service-bus-queue.@#@'].outputs.id} # Output of the present resource
+        # "principal_ids" is an output of the present resource
+        # Collecting the principal_ids requires the use of a resource selector
+        # and these are not supported in co-provisioning "params"
+        principal_ids: ${resources['azure-service-bus-queue.@#@'].outputs.principal_ids}
+        role_definition_name: ${resources['azure-service-bus-queue.@#@'].outputs.role_definition_name}
+  # Adjust matching criteria as required, but must match all access classes
+  criteria:
+  - class: azure-service-bus-data-owner
+    app_id: workload-identity-test-azure
+  - class: azure-service-bus-data-sender
+    app_id: workload-identity-test-azure
