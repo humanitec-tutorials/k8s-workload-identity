@@ -42,11 +42,6 @@ entity:
           output "id" {
             value = azurerm_servicebus_queue.this.id
           }
-          output "principal_ids" {
-            # This Resource selector retrieves the principal_ids of the Azure managed identity resources
-            # of all workloads depending on the present service bus queue resource
-            value = ${resources['azure-service-bus-queue.@#@<workload>azure-managed-identity'].outputs.principal_id}
-          }
         providers.tf: |
           terraform {
             required_providers {
