@@ -90,6 +90,6 @@ entity:
         # Collecting the principal_ids requires the use of a resource selector
         # and these are not supported in co-provisioning "params"
         principal_ids: ${resources['azure-storage-account.@#@'].outputs.principal_ids}
-        role_definition_name: "Storage Blob Data Contributor"
+        role_definition_name: "Storage Blob Data Owner"
   criteria:
     - app_id: workload-identity-test-azure

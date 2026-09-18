@@ -28,7 +28,7 @@ entity:
       # Maps an access class to the Azure built-in role it grants.
       # Add further entries here to support additional access classes.
       role_definition_names:
-        azure-service-bus-data-owner: Azure Service Bus Data Owner
+        azure-service-bus-data-receiver: Azure Service Bus Data Receiver
         azure-service-bus-data-sender: Azure Service Bus Data Sender
       templates:
         init: |
@@ -61,7 +61,7 @@ entity:
         role_definition_name: ${resources['azure-service-bus-queue.@#@'].outputs.role_definition_name}
   # Adjust matching criteria as required, but must match all access classes
   criteria:
-  - class: azure-service-bus-data-owner
+  - class: azure-service-bus-data-receiver
     app_id: workload-identity-test-azure
   - class: azure-service-bus-data-sender
     app_id: workload-identity-test-azure

@@ -15,5 +15,5 @@ resources:
     id: storage-2
   queue-1:
     type: azure-service-bus-queue
-    class: azure-service-bus-data-owner
+    class: azure-service-bus-data-receiver
     id: queue-1

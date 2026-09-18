@@ -1,5 +1,5 @@
-# This Resource Definition creates an Azure service bus queue
-# in a default namespace
+# This Resource Definition creates an Azure service bus queue in its own namespace
+# This is the "concrete" Resource Definition supplementing the Delegator
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:

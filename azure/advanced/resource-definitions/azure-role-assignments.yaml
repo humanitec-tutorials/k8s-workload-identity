@@ -26,6 +26,15 @@ entity:
           output "ids" {
             value = azurerm_role_assignment.this[*].id
           }
+          output "scope" {
+            value = var.scope
+          }
+          output "principal_ids" {
+            value = var.principal_ids
+          }
+          output "role_definition_name" {
+            value = var.role_definition_name
+          }
         providers.tf: |
           terraform {
             required_providers {
@@ -65,7 +74,7 @@ entity:
     app_id: workload-identity-test-azure
   - class: azure-storage-blob-data-reader
     app_id: workload-identity-test-azure
-  - class: azure-service-bus-data-owner
+  - class: azure-service-bus-data-receiver
     app_id: workload-identity-test-azure
   - class: azure-service-bus-data-sender
     app_id: workload-identity-test-azure
