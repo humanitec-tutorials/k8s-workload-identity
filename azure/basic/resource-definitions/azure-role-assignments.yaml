@@ -68,6 +68,6 @@ entity:
             serviceAccountName: humanitec-runner
       # Using the default TF backend for simplicity
       use_default_backend: true
-  # Match the storage account class
+  # Match the test Application and class "default"
   criteria:
     - app_id: workload-identity-test-azure
