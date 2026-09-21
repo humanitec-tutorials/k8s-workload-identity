@@ -26,6 +26,15 @@ entity:
           output "ids" {
             value = azurerm_role_assignment.this[*].id
           }
+          output "scope" {
+            value = var.scope
+          }
+          output "principal_ids" {
+            value = var.principal_ids
+          }
+          output "role_definition_name" {
+            value = var.role_definition_name
+          }
         providers.tf: |
           terraform {
             required_providers {
