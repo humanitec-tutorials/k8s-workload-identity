@@ -1,0 +1,21 @@
+# This Resource Definition of type "config" uses the Template Driver to provide configuration values
+# to other Resource Definitions for accessing the Azure subscription
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-app-config
+entity:
+  name: wi-azure-app-config
+  type: config
+  driver_type: humanitec/echo
+  driver_inputs:
+    values:
+      subscription_id: 10ff9691-ba83-487c-8703-7a2549404586
+      resource_group_name: workload-identity-test-azure
+      location: germanywestcentral
+      aks_oidc_issuer_url: "https://germanywestcentral.oic.prod-aks.azure.com/a1f64eca-e0a2-414a-9d9a-29fad511c67d/fd8e51ec-c087-49ab-8f20-fbc4d83e5a00/"
+  criteria:
+    - class: default
+      res_id: app-config
+      env_type: development
+      app_id: workload-identity-test-azure
