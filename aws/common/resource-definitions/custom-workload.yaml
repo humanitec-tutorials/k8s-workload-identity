@@ -18,6 +18,10 @@ entity:
             - op: add
               path: /spec/serviceAccountName
               value: ${resources.k8s-service-account.outputs.name}
+              # Basic setup only: change to "${resources.k8s-service-account#ksa.outputs.name}"
+              # to use a single service account and thus a single identity for all workloads
+              # The "#ksa" part assigns fixed Resource ID, making it unique in the Resource Graph
+              # and shared among all workloads
   # Adjust matching criteria as required
   criteria:
   - app_id: workload-identity-test-aws
