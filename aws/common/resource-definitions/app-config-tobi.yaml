@@ -10,7 +10,7 @@ entity:
   driver_type: humanitec/echo
   driver_inputs:
     values:
-      region: YOURVALUE
+      region: eu-north-1
   criteria:
     - class: default
       res_id: app-config

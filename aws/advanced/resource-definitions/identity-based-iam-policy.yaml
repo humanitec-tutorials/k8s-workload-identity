@@ -1,18 +1,17 @@
-# This Resource Definition creates an IAM policy for the access class it matched to
+# This Resource Definition of type "aws-policy" provisions
+# an identity based IAM policy. It is made to work across Resource Types.
+# The resource ARN for the policy as well as the list of actions are passed in
+# as variables set in the "params" property in the resource that is co-provisioning it
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-sqs-iam-policy
+  id: wi-aws-identity-based-iam-policy
 entity:
-  driver_type: humanitec/terraform-runner
-  name: wi-aws-sqs-iam-policy
+  driver_type: humanitec/opentofu-container-runner-builtin
+  name: wi-aws-identity-based-iam-policy
   type: aws-policy
-  # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage IAM policies
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
       variables:
         app_id: "${context.app.id}"
         env_id: "${context.env.id}"
@@ -21,13 +20,6 @@ entity:
         region: ${resources['config.default#app-config'].outputs.region}
         # The Globally Unique Resource ID (GUResID) is useful for ensuring uniqueness
         guresid: ${context.res.guresid}
-        # Get the sqs resource with the same class and ID as the current resource
-        sqs_arn: ${resources.sqs.outputs.arn}
-      credentials_config:
-        environment:
-          AWS_ACCESS_KEY_ID: AccessKeyId
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey
-          AWS_SESSION_TOKEN: SessionToken
       files:
         providers.tf: |
           terraform {
@@ -44,26 +36,13 @@ entity:
           variable "res_class" {}
           variable "region" {}
           variable "guresid" {}
-          variable "sqs_arn" {}
-          # Define the actions for each access class
-          locals {
-            actions = {
-              "sqs-admin" = [
-                "sqs:*"
-              ]
-              "sqs-read-only" = [
-                "sqs:GetQueueAttributes",
-                "sqs:GetQueueUrl",
-                "sqs:ListDeadLetterSourceQueues",
-                "sqs:ListQueues",
-                "sqs:ListMessageMoveTasks",
-                "sqs:ListQueueTags",
-                "sqs:ReceiveMessage"
-              ]
-            }
+          variable "resource_arn" {}
+          variable "actions" {
+            type = list(string)
           }
         main.tf: |
           # Provider credentials are being injected through environment variables
+          # via the EKS workload identity setup
           provider "aws" {
             region = var.region
             default_tags {
@@ -77,14 +56,15 @@ entity:
             }
           }
           # Prepare the policy document
-          data "aws_iam_policy_document" "sqs_policy" {
+          data "aws_iam_policy_document" "this" {
             statement {
               # Statement IDs must be alphanumeric
-              sid = replace(var.res_class, "-", "")
-              effect = "Allow"
-              actions = local.actions[var.res_class]
+              sid       = replace(var.res_class, "-", "")
+              effect    = "Allow"
+              # Use the list of actions passed in
+              actions   = var.actions
               resources = [
-                var.sqs_arn
+                var.resource_arn
               ]
             }
           }
@@ -92,14 +72,16 @@ entity:
           resource "aws_iam_policy" "policy" {
             name        = var.guresid
             path        = "/"
-            description = "IAM Policy $\{var.res_class} for SQS $\{var.sqs_arn}"
-            policy      = data.aws_iam_policy_document.sqs_policy.json
+            description = "IAM Policy $\{var.res_class} for $\{var.resource_arn}"
+            policy      = data.aws_iam_policy_document.this.json
           }
         outputs.tf: |
           output "arn" {
             value = aws_iam_policy.policy.arn
           }
-  # Match all the supported classes
+      # Using the default TF backend for simplicity
+      use_default_backend: true
+  # Match all the supported classes across all Resource Types
   criteria:
   - class: sqs-admin
   - class: sqs-read-only
