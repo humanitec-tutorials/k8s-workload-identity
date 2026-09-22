@@ -1,4 +1,4 @@
-# This Resource Definition of type "config" uses the Template Driver to provide configuration values
+# This Resource Definition of type "config" uses the Echo Driver to provide configuration values
 # to other Resource Definitions for accessing the Azure subscription
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
