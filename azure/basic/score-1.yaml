@@ -1,0 +1,25 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: hello-azure-1
+containers:
+  hello-world:
+    image: .
+    command: ["sleep","infinity"]
+    variables:
+      PRIVATE_STORAGE_1_ACCOUNT: ${resources.private-storage-1.account}
+      STORAGE_1_ACCOUNT: ${resources.storage-1.account}
+      STORAGE_2_ACCOUNT: ${resources.storage-2.account}
+      QUEUE_1_QUEUE: ${resources.queue-1.queue}
+resources:
+  private-storage-1:
+    type: azure-storage-account
+    # no "id" for a private resource
+  storage-1:
+    type: azure-storage-account
+    id: storage-1
+  storage-2:
+    type: azure-storage-account
+    id: storage-2
+  queue-1:
+    type: azure-service-bus-queue
+    id: queue-1

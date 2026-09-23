@@ -1,18 +1,21 @@
 # This Resource Definition of type "config" uses the Echo Driver to provide configuration values
-# to other Resource Definitions for accessing the AWS Project
+# to other Resource Definitions for accessing the Azure subscription
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-app-config
+  id: wi-azure-app-config
 entity:
-  name: wi-aws-app-config
+  name: wi-azure-app-config
   type: config
   driver_type: humanitec/echo
   driver_inputs:
     values:
-      region: YOURVALUE
+      subscription_id: YOURVALUE
+      resource_group_name: YOURVALUE
+      location: YOURVALUE
+      aks_oidc_issuer_url: "YOURVALUE"
   criteria:
     - class: default
       res_id: app-config
       env_type: development
-      app_id: workload-identity-test-aws
+      app_id: workload-identity-test-azure

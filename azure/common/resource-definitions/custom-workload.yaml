@@ -3,9 +3,9 @@
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
-  id: wi-aws-custom-workload
+  id: wi-azure-custom-workload
 entity:
-  name: wi-aws-custom-workload
+  name: wi-azure-custom-workload
   type: workload
   driver_type: humanitec/template
   driver_inputs:
@@ -13,13 +13,20 @@ entity:
       templates:
         # Request a resource of type 'k8s-service-account' in the Resource Graph
         # and add its name to the workload spec
+        # Label the service account to use workload identity
         outputs: |
           update:
             - op: add
               path: /spec/serviceAccountName
-              # Change to "resources.k8s-service-account#ksa.outputs.name"
-              # to use a single service account for all workloads
               value: ${resources.k8s-service-account.outputs.name}
+              # Basic setup only: change to "${resources.k8s-service-account#ksa.outputs.name}"
+              # to use a single service account and thus a single identity for all workloads
+              # The "#ksa" part assigns fixed Resource ID, making it unique in the Resource Graph
+              # and shared among all workloads
+            - op: add
+              path: /spec/pod/labels
+              value:
+                azure.workload.identity/use: "true"
   # Adjust matching criteria as required
   criteria:
-  - app_id: workload-identity-test-aws
+  - app_id: workload-identity-test-azure

@@ -6,13 +6,11 @@ kind: Definition
 metadata:
   id: wi-aws-role
 entity:
-  driver_type: humanitec/terraform-runner
+  driver_type: humanitec/opentofu-container-runner-builtin
   name: wi-aws-role
   type: aws-role
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
       variables:
         app_id: "${context.app.id}"
         env_id: "${context.env.id}"
@@ -36,11 +34,6 @@ entity:
         # - The workload depends on the present aws-role depends because the k8s-service-account co-provisions it with match_dependents = true
         # - The selector may return more than one element because the workload may depend on more than one aws-policy
         iam_policy_arns: ${resources["aws-role<workload>aws-policy"].outputs.arn}
-      credentials_config:
-        environment:
-          AWS_ACCESS_KEY_ID: AccessKeyId
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey
-          AWS_SESSION_TOKEN: SessionToken
       files:
         providers.tf: | 
           terraform {
@@ -64,6 +57,7 @@ entity:
           }
         main.tf: |
           # Provider credentials are being injected through environment variables
+          # via the EKS workload identity setup
           provider "aws" {
             region = var.region
             default_tags {
@@ -121,5 +115,7 @@ entity:
           output "arn" {
             value = aws_iam_role.this.arn
           }
+      # Using the default TF backend for simplicity
+      use_default_backend: true
   criteria:
   - app_id: workload-identity-test-aws

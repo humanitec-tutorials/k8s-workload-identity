@@ -1,28 +1,19 @@
-# This Resource Definition of type `sqs` uses the Terraform Runner Driver to provision an Amazon SQS service
+# This Resource Definition of type `sqs` provisions an Amazon SQS service
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
   id: wi-aws-sqs
 entity:
-  driver_type: humanitec/terraform-runner
+  driver_type: humanitec/opentofu-container-runner-builtin
   name: wi-aws-sqs
   type: sqs
-  # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage SQS services
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
       variables:
         app_id: "${context.app.id}"
         env_id: "${context.env.id}"
         res_id: "${context.res.id}"
         region: ${resources['config.default#app-config'].outputs.region}
-      credentials_config:
-        environment:
-          AWS_ACCESS_KEY_ID: AccessKeyId
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey
-          AWS_SESSION_TOKEN: SessionToken
       files:
         providers.tf: |
           terraform {
@@ -76,6 +67,8 @@ entity:
           output "url" {
             value = aws_sqs_queue.queue.url
           }
+      # Using the default TF backend for simplicity
+      use_default_backend: true
   # Adjust matching criteria as required
   criteria:
   - app_id: workload-identity-test-aws
