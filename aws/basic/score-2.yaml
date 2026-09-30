@@ -8,6 +8,8 @@ containers:
     variables:
       S3_BUCKET_2_NAME: ${resources.bucket-2.name}
       SQS_1_URL: ${resources.sqs-1.url}
+
+# The access level of this workload to each resource is defined on the platform side
 resources:
   bucket-2:
     type: s3

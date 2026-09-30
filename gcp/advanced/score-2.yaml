@@ -7,6 +7,8 @@ containers:
     command: ["sleep","infinity"]
     variables:
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
+
+# The access level of this workload to each resource is defined by its respective "class"
 resources:
   bucket-2:
     type: gcs

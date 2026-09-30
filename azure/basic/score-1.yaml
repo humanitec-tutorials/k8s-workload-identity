@@ -10,6 +10,8 @@ containers:
       STORAGE_1_ACCOUNT: ${resources.storage-1.account}
       STORAGE_2_ACCOUNT: ${resources.storage-2.account}
       QUEUE_1_QUEUE: ${resources.queue-1.queue}
+
+# The access level of this workload to each resource is defined on the platform side
 resources:
   private-storage-1:
     type: azure-storage-account
