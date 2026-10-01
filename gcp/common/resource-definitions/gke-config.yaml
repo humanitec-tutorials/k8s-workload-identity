@@ -1,5 +1,5 @@
-# This Resource Definition of type "config" uses the Template Driver to provide configuration values
-# to other Resource Definitions for accessing the GKE cluster
+# This Resource Definition of type "config" uses the Echo Driver to provide configuration values
+# to other Resource Definitions about the GKE cluster
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
@@ -7,17 +7,12 @@ metadata:
 entity:
   name: wi-gcp-gke-config
   type: config
-  driver_type: humanitec/template
-  # The identity configured in this Cloud Account needs permission
-  # to deploy Workloads to your GKE cluster
-  driver_account: YOURACCOUNT
+  driver_type: humanitec/echo
   driver_inputs:
     values:
-      templates:
-        outputs: |
-          gke_project_id: YOURVALUE
-          # Keep the "" around the value of gke_project_number
-          gke_project_number: "YOURVALUE"
+      gke_project_id: YOURVALUE
+      # Keep the "" around the value of gke_project_number
+      gke_project_number: "YOURVALUE"
   criteria:
     - class: default
       res_id: gke-config

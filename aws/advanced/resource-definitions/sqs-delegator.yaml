@@ -1,10 +1,11 @@
 # This Resource Definition of type `sqs` implements a "Delegator" resource
+# It co-provisions an aws-policy resource with the appropriate permission set
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
   id: wi-aws-sqs-delegator
 entity:
-  driver_type: humanitec/echo
+  driver_type: humanitec/template
   name: wi-aws-sqs-delegator
   type: sqs
   driver_inputs:
@@ -13,11 +14,42 @@ entity:
       arn: ${resources['sqs.default'].outputs.arn}
       region: ${resources['sqs.default'].outputs.region}
       url: ${resources['sqs.default'].outputs.url}
+      # The class of the present resource, used to look up the permissions to grant
+      res_class: ${context.res.class}
+      # Map resource clases to actions required to set for the respective policy
+      # Modify the list to fit your needs
+      classes_actions:
+        sqs-admin:
+          - sqs:*
+        sqs-read-only:
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+          - sqs:ListDeadLetterSourceQueues
+          - sqs:ListQueues
+          - sqs:ListMessageMoveTasks
+          - sqs:ListQueueTags
+          - sqs:ReceiveMessage
+      templates:
+        init: |
+          arn: {{ .driver.values.arn | toRawJson }}
+          region: {{ .driver.values.region | toRawJson }}
+          url: {{ .driver.values.url | toRawJson }}
+          actions: {{ get .driver.values.classes_actions .driver.values.res_class | toRawJson }}
+        outputs: |
+          arn: {{ .init.arn | toRawJson }}
+          region: {{ .init.region | toRawJson }}
+          url: {{ .init.url | toRawJson }}
+          actions: {{ .init.actions | toRawJson }}
   provision:
     # Co-provision an IAM Policy resource for this class of sqs
     # By specifying neither class nor ID, the co-provisioned aws-policy will have the same class and ID as the present resource
     aws-policy:
       match_dependents: true
+      params:
+        # Get the resource_arn output of the present resource
+        resource_arn: ${resources['sqs.@#@'].outputs.arn}
+        # Get the actions output of the present resource
+        actions: ${resources['sqs.@#@'].outputs.actions}
   # Adjust matching criteria as required, but must match all classes
   criteria:
   - class: sqs-admin

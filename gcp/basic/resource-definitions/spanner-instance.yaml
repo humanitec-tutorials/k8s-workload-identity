@@ -1,27 +1,20 @@
-# This Resource Definition of type `spanner-instance` uses the Terraform Driver to provision a spanner instance
+# This Resource Definition of type `spanner-instance` provisions a spanner instance
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
   id: wi-gcp-spanner-instance
 entity:
-  driver_type: humanitec/terraform-runner
+  driver_type: humanitec/opentofu-container-runner-builtin
   name: wi-gcp-spanner-instance
   type: spanner-instance
-  # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage Spanner instances
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
       variables:
         app_id: "${context.app.id}"
         env_id: "${context.env.id}"
         res_id: "${context.res.id}"
         project_id: ${resources['config.default#app-config'].outputs.project_id}
         region: ${resources['config.default#app-config'].outputs.region}
-      credentials_config:
-        variables:
-          access_token: access_token
       files:
         providers.tf: |
           terraform {
@@ -38,10 +31,6 @@ entity:
           locals {
             workload_id = split(".", var.res_id)[1]
           }
-          variable "access_token" {
-            type      = string
-            sensitive = true
-          }
           variable "app_id" {}
           variable "env_id" {}
           variable "res_id" {}
@@ -49,7 +38,6 @@ entity:
           variable "region" {}
         main.tf: |
           provider "google" {
-            access_token = var.access_token
             default_labels = {
               "humanitec"  = "true"
               "hum-app"    = var.app_id
@@ -81,6 +69,8 @@ entity:
           output "project" {
             value = var.project_id
           }
+      # Using the default TF backend for simplicity
+      use_default_backend: true
   provision:
     # Co-provision an IAM Policy resource of class "spanner-instance-default" for this default spanner-instance
     # By not specifying an ID, the co-provisioned gcp-iam-policy-binding will have the same ID as the present resource

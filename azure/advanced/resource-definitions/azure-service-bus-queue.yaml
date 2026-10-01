@@ -1,0 +1,76 @@
+# This Resource Definition creates an Azure service bus queue in its own namespace
+# This is the "concrete" Resource Definition supplementing the Delegator
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-service-bus-queue
+entity:
+  driver_type: humanitec/opentofu-container-runner-builtin
+  name: wi-azure-service-bus-queue
+  type: azure-service-bus-queue
+  driver_inputs:
+    values:
+      files:
+        input_vars.auto.tfvars.json: |
+          {
+            "resource_group_name": "${resources['config.default#app-config'].outputs.resource_group_name}",
+            "location"           : "${resources['config.default#app-config'].outputs.location}",
+            "resource_guresid"   : "${context.res.guresid}"
+          }
+        main.tf: |
+          resource "azurerm_servicebus_namespace" "this" {
+            name                = format("wi-%s", substr(var.resource_guresid, 0, 24))
+            location            = var.location
+            resource_group_name = var.resource_group_name
+            sku                 = "Basic"
+          }
+          resource "azurerm_servicebus_queue" "this" {
+            name         = substr(var.resource_guresid, 0, 24)
+            namespace_id = azurerm_servicebus_namespace.this.id
+            partitioning_enabled = true
+          }
+        outputs.tf: |
+          output "hostname" {
+            value = azurerm_servicebus_namespace.this.endpoint
+          }
+          output "namespace" {
+            value = azurerm_servicebus_namespace.this.name
+          }
+          output "queue" {
+            value = azurerm_servicebus_queue.this.name
+          }
+          output "id" {
+            value = azurerm_servicebus_queue.this.id
+          }
+        providers.tf: |
+          terraform {
+            required_providers {
+              azurerm = {
+                source  = "hashicorp/azurerm"
+                version = ">=4.78.0"
+              }
+            }
+          }
+          provider "azurerm" {
+            features {}
+          }
+        variables.tf: |
+          variable "resource_group_name" {}
+          variable "location" {}
+          variable "resource_guresid" {}
+      runner:
+        variables:
+          ARM_SUBSCRIPTION_ID: ${resources['config.default#app-config'].outputs.subscription_id}
+          ARM_USE_CLI: '''false'''
+          ARM_USE_AKS_WORKLOAD_IDENTITY: '''true'''
+        # Setup for runner workload identity
+        pod_template: |
+          metadata:
+            labels:
+              azure.workload.identity/use: "true"
+          spec:
+            serviceAccountName: humanitec-runner
+      # Using the default TF backend for simplicity
+      use_default_backend: true
+  criteria:
+    - app_id: workload-identity-test-azure

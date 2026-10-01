@@ -1,0 +1,80 @@
+# This Resource Definition creates Azure role assignments for a scope, i.e. an Azure resource,
+# and a number of principals. Both must be passed in to the variable "principal_ids"
+# The role to be assigned must be passed in to "role_definition_name"
+# By passing in all required data, this Resource Definition can serve role assigments
+# for all kinds of Azure resources
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-role-assignments
+entity:
+  driver_type: humanitec/opentofu-container-runner-builtin
+  name: wi-azure-role-assignments
+  type: azure-role-assignments
+  driver_inputs:
+    values:
+      files:
+        main.tf: |
+          # Create one role assignment per element in the "principal_ids" array
+          resource "azurerm_role_assignment" "this" {
+            count                = length(var.principal_ids)
+            scope                = var.scope
+            role_definition_name = var.role_definition_name
+            principal_id         = var.principal_ids[count.index]
+          }
+        outputs.tf: |
+          output "ids" {
+            value = azurerm_role_assignment.this[*].id
+          }
+          output "scope" {
+            value = var.scope
+          }
+          output "principal_ids" {
+            value = var.principal_ids
+          }
+          output "role_definition_name" {
+            value = var.role_definition_name
+          }
+        providers.tf: |
+          terraform {
+            required_providers {
+              azurerm = {
+                source  = "hashicorp/azurerm"
+                version = ">=4.78.0"
+              }
+            }
+          }
+          provider "azurerm" {
+            features {}
+          }
+        variables.tf: |
+          # The values for these variables are passed as "params" in the coprovisioning resource
+          variable "scope" {}
+          variable "principal_ids" {
+            type = list(string)
+          }
+          variable "role_definition_name" {}
+      runner:
+        variables:
+          ARM_SUBSCRIPTION_ID: ${resources['config.default#app-config'].outputs.subscription_id}
+          ARM_USE_CLI: '''false'''
+          ARM_USE_AKS_WORKLOAD_IDENTITY: '''true'''
+        # Setup for runner workload identity
+        pod_template: |
+          metadata:
+            labels:
+              azure.workload.identity/use: "true"
+          spec:
+            serviceAccountName: humanitec-runner
+      # Using the default TF backend for simplicity
+      use_default_backend: true
+  # Match all supported classes of all resource types
+  criteria:
+  - class: azure-storage-blob-contributor
+    app_id: workload-identity-test-azure
+  - class: azure-storage-blob-data-reader
+    app_id: workload-identity-test-azure
+  - class: azure-service-bus-data-receiver
+    app_id: workload-identity-test-azure
+  - class: azure-service-bus-data-sender
+    app_id: workload-identity-test-azure

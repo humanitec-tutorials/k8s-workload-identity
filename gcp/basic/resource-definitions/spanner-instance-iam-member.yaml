@@ -1,16 +1,13 @@
-# This Resource Definition uses the Terraform Driver to create IAM policies for spanner-instance resources
+# This Resource Definition provisions IAM policies for spanner-instance resources
 # In this scenario, each workload gets its own Spanner instance and permission to manage its own databases inside it.
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
   id: wi-gcp-spanner-instance-iam-member
 entity:
-  driver_type: humanitec/terraform-runner
+  driver_type: humanitec/opentofu-container-runner-builtin
   name: wi-gcp-spanner-instance-iam-member
   type: gcp-iam-policy-binding
-  # The identity used in this Cloud Account is the one executing the Terraform code
-  # It needs permissions to manage IAM members
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
       variables:
@@ -30,9 +27,6 @@ entity:
         # - The selector may return more than one element because more than one workload may depend on the spanner-instance
         #   if the spanner-instance is a Shared Resource
         principals: ${resources['spanner-instance.default<workload>k8s-service-account'].outputs.principal}
-      credentials_config:
-        variables:
-          access_token: access_token
       files:
         providers.tf: |
           terraform {
@@ -43,10 +37,6 @@ entity:
             }
           }
         variables.tf: |
-          variable "access_token" {
-            type      = string
-            sensitive = true
-          }
           variable "res_class" {}
           variable "project_id" {}
           variable "spanner_instance_name" {}
@@ -55,9 +45,7 @@ entity:
             type = set(string)
           }
         main.tf: |
-          provider "google" {
-            access_token = var.access_token
-          }
+          provider "google" {}
           # Create one IAM member for each principal using a role of your choice
           resource "google_spanner_instance_iam_member" "iam_member" {
             for_each = var.principals
@@ -71,6 +59,8 @@ entity:
           output "principals" {
             value = join(",", var.principals)
           }   
+      # Using the default TF backend for simplicity
+      use_default_backend: true
   # Match the class that is used in the "provision" statement in spanner-instance Resource Definition
   criteria:
   - class: spanner-instance-default

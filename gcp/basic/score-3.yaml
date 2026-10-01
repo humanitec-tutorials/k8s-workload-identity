@@ -8,6 +8,8 @@ containers:
     variables:
       GCP_BUCKET_2_NAME: ${resources.bucket-2.name}
       SPANNER_1_INSTANCE: ${resources.spanner-1.instance}
+
+# The access level of this workload to each resource is defined on the platform side
 resources:
   bucket-2:
     type: gcs

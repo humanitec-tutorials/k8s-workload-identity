@@ -1,0 +1,71 @@
+# This Resource Definition creates an Azure managed identity
+# It also coprovisions an Azure federated identity credential
+apiVersion: entity.humanitec.io/v1b1
+kind: Definition
+metadata:
+  id: wi-azure-managed-identity
+entity:
+  driver_type: humanitec/opentofu-container-runner-builtin
+  name: wi-azure-managed-identity
+  type: azure-managed-identity
+  driver_inputs:
+    values:
+      files:
+        input_vars.auto.tfvars.json: |
+          {
+            "resource_group_name": "${resources['config#app-config'].outputs.resource_group_name}",
+            "location"           : "${resources['config#app-config'].outputs.location}",
+            "resource_guresid"   : "${context.res.guresid}"
+          }
+        main.tf: |
+          resource "azurerm_user_assigned_identity" "this" {
+            name                = var.resource_guresid
+            location            = var.location
+            resource_group_name = var.resource_group_name
+          }
+        outputs.tf: |
+          output "client_id" {
+            value = azurerm_user_assigned_identity.this.client_id
+          }
+          output "id" {
+            value = azurerm_user_assigned_identity.this.id
+          }
+          output "principal_id" {
+            value = azurerm_user_assigned_identity.this.principal_id
+          }
+        providers.tf: |
+          terraform {
+            required_providers {
+              azurerm = {
+                source  = "hashicorp/azurerm"
+                version = ">=4.78.0"
+              }
+            }
+          }
+          provider "azurerm" {
+            features {}
+          }
+        variables.tf: |
+          variable "resource_group_name" {}
+          variable "location" {}
+          variable "resource_guresid" {}
+      runner:
+        variables:
+          ARM_SUBSCRIPTION_ID: ${resources['config.default#app-config'].outputs.subscription_id}
+          ARM_USE_CLI: '''false'''
+          ARM_USE_AKS_WORKLOAD_IDENTITY: '''true'''
+        # Setup for runner workload identity
+        pod_template: |
+          metadata:
+            labels:
+              azure.workload.identity/use: "true"
+          spec:
+            serviceAccountName: humanitec-runner
+      # Using the default TF backend for simplicity
+      use_default_backend: true
+  # Coprovision a federated identity credential to facilitate workload identity
+  provision:
+    azure-federated-identity:
+      is_dependent: true
+  criteria:
+    - app_id: workload-identity-test-azure

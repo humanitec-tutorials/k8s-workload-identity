@@ -1,17 +1,15 @@
-# This Resource Definition of type "aws-policy" uses the Terraform Runner Driver to provision
+# This Resource Definition of type "aws-policy" provisions
 # a bucket policy for a S3 bucket it depends on
 apiVersion: entity.humanitec.io/v1b1
 kind: Definition
 metadata:
   id: wi-aws-s3-bucket-policy
 entity:
-  driver_type: humanitec/terraform-runner
+  driver_type: humanitec/opentofu-container-runner-builtin
   name: wi-aws-s3-bucket-policy
   type: aws-policy
-  driver_account: ${resources['config.default#app-config'].account}
   driver_inputs:
     values:
-      append_logs_to_error: true
       variables:
         app_id: ${context.app.id}
         env_id: ${context.env.id}
@@ -32,11 +30,6 @@ entity:
         # - The selector may return more than one element because more than one workload may depend on the s3
         #   if the s3 is a Shared Resource
         role_arns: ${resources['s3.default<workload>aws-role'].outputs.arn}
-      credentials_config:
-        environment:
-          AWS_ACCESS_KEY_ID: AccessKeyId
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey
-          AWS_SESSION_TOKEN: SessionToken
       files:
         providers.tf: | 
           terraform {
@@ -58,6 +51,7 @@ entity:
           }
         main.tf: |
           # Provider credentials are being injected through environment variables
+          # via the EKS workload identity setup
           provider "aws" {
             region = var.region
             default_tags {
@@ -100,6 +94,8 @@ entity:
           output "role_arns" {
             value = join(",", var.role_arns)
           }
+      # Using the default TF backend for simplicity
+      use_default_backend: true
   # Match the class that is used in the "provision" statement in the s3 Resource Definition
   criteria:
   - class: s3-bucket-policy
